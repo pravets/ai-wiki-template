@@ -1,0 +1,13 @@
+# Obsidian workspace state (session-specific, not source)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# Plugin binaries (install from Obsidian community catalog; see README)
+.obsidian/plugins/*/main.js
+.obsidian/plugins/*/styles.css
+
+# Syncthing conflict copies
+*.sync-conflict-*
+
+# Node/tooling
+node_modules/
