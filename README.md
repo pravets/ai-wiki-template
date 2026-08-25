@@ -39,6 +39,10 @@
 
 `person`, `interaction`, `project`, `talk-project`, `draft-ideas`, `poi`, `trip`, `wiki-concept`, `daily`.
 
+### Скиллы (`skills/`)
+
+Процедуры для ИИ-агентов: [wiki-ingest](skills/wiki-ingest/SKILL.md) (ингвест), [wiki-query](skills/wiki-query/SKILL.md) (исследование), [wiki-lint](skills/wiki-lint/SKILL.md) (гигиена). Формат и подключение — в [skills/README.md](skills/README.md).
+
 ## Развёртывание
 
 1. **Клонировать**: `git clone <repo-url> ai-wiki` (или «Download ZIP»).

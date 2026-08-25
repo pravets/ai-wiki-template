@@ -44,6 +44,14 @@
 9. Бинари в vault не класть: PDF/картинки — только URL/ссылки.
 10. Коммиты агента — от отдельного identity (напр. `Agent <agent@example.com>`); правки юзера коммитит автокоммиттер своим identity. Согласуй identity в своём окружении.
 
+## Процедуры
+
+Пошаговые воркфлоу вынесены в [`skills/`](skills/) — читай соответствующий `SKILL.md` перед операцией:
+
+- ингвест источника → [skills/wiki-ingest](skills/wiki-ingest/SKILL.md)
+- вопрос по базе (read-only) → [skills/wiki-query](skills/wiki-query/SKILL.md)
+- гигиена базы → [skills/wiki-lint](skills/wiki-lint/SKILL.md)
+
 ## Workflows
 
 ### Ингвест
