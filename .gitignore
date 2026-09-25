@@ -9,5 +9,11 @@
 # Syncthing conflict copies
 *.sync-conflict-*
 
+# Локальные секреты: .env никогда не коммитить.
+# Шаблон контракта (без значений) — .env.example, он коммитится.
+.env
+.env.*
+!.env.example
+
 # Node/tooling
 node_modules/
