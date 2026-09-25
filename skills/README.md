@@ -15,6 +15,7 @@
 | [wiki-people](wiki-people/SKILL.md) | карточки людей: контракт frontmatter, диктовка, ревью-гейт |
 | [wiki-transcript-common](wiki-transcript-common/SKILL.md) | транскрибация неприватного: видео, подкасты, эфиры |
 | [wiki-transcript-private](wiki-transcript-private/SKILL.md) | транскрибация личного: голосовые, приватные встречи |
+| [wiki-ocr](wiki-ocr/SKILL.md) | OCR: текст-слой → tesseract → облачный vision по согласию |
 
 ## Подключение к агенту
 
