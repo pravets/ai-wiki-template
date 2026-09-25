@@ -17,3 +17,7 @@
 
 # Node/tooling
 node_modules/
+
+# Python bytecode (helpers are run directly, caches are not source)
+__pycache__/
+*.pyc
