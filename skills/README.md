@@ -11,6 +11,8 @@
 | [wiki-ingest](wiki-ingest/SKILL.md) | ингвест источника: inbox → raw → wiki → index/log |
 | [wiki-query](wiki-query/SKILL.md) | query-only исследование базы |
 | [wiki-lint](wiki-lint/SKILL.md) | гигиена: сироты, противоречия, конфликты |
+| [wiki-poi](wiki-poi/SKILL.md) | точки интереса: место → координаты → заметка + карта |
+| [wiki-people](wiki-people/SKILL.md) | карточки людей: контракт frontmatter, диктовка, ревью-гейт |
 
 ## Подключение к агенту
 

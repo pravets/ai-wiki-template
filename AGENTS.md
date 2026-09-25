@@ -49,6 +49,8 @@
 Пошаговые воркфлоу вынесены в [`skills/`](skills/) — читай соответствующий `SKILL.md` перед операцией:
 
 - ингвест источника → [skills/wiki-ingest](skills/wiki-ingest/SKILL.md)
+- точка интереса (место, координаты, карта) → [skills/wiki-poi](skills/wiki-poi/SKILL.md)
+- карточка человека / взаимодействие → [skills/wiki-people](skills/wiki-people/SKILL.md)
 - вопрос по базе (read-only) → [skills/wiki-query](skills/wiki-query/SKILL.md)
 - гигиена базы → [skills/wiki-lint](skills/wiki-lint/SKILL.md)
 
