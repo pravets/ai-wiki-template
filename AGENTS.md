@@ -51,6 +51,8 @@
 - ингвест источника → [skills/wiki-ingest](skills/wiki-ingest/SKILL.md)
 - точка интереса (место, координаты, карта) → [skills/wiki-poi](skills/wiki-poi/SKILL.md)
 - карточка человека / взаимодействие → [skills/wiki-people](skills/wiki-people/SKILL.md)
+- транскрибация неприватного материала (видео, подкасты) → [skills/wiki-transcript-common](skills/wiki-transcript-common/SKILL.md)
+- транскрибация личного материала (голосовые, приватные встречи) → [skills/wiki-transcript-private](skills/wiki-transcript-private/SKILL.md)
 - вопрос по базе (read-only) → [skills/wiki-query](skills/wiki-query/SKILL.md)
 - гигиена базы → [skills/wiki-lint](skills/wiki-lint/SKILL.md)
 
