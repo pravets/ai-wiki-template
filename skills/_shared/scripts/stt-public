@@ -1,0 +1,42 @@
+#!/bin/bash
+# STT ПУБЛИЧНОЙ ветки: неприватный публичный контент — видео, рилы, подкасты, эфиры, лекции.
+# Мультитенантный агрегатор допустим, модель может быть дешёвой (turbo).
+#
+# Личные записи сюда НЕ отправлять: для них stt-private (прямой провайдер).
+# Сомневаешься в характере источника — спроси владельца; если спросить некого,
+# считай материал приватным (fail-closed).
+#
+# Контракт конфигурации: STT_PUBLIC_URL, STT_PUBLIC_KEY, STT_PUBLIC_MODEL (обязательны;
+# принимается и старое имя STT_COMMON_*), STT_LANG (опц.). Формат файла — в stt-lib.sh.
+#
+# usage: stt-public <ссылка|файл> <выходной.txt>
+
+set -euo pipefail
+. "$(dirname "$(readlink -f "$0")")/stt-lib.sh"
+
+if [ $# -ne 2 ]; then
+  echo "usage: stt-public <ссылка|файл> <выходной.txt>" >&2
+  exit 2
+fi
+
+INPUT="$1"; OUTPUT="$2"
+
+URL="$(stt_require STT_PUBLIC_URL "endpoint агрегатора для неприватного контента" STT_COMMON_URL)"
+KEY="$(stt_require STT_PUBLIC_KEY "ключ агрегатора" STT_COMMON_KEY)"
+MODEL="$(stt_require STT_PUBLIC_MODEL "модель распознавания (дефолтов в коде нет)" STT_COMMON_MODEL)"
+
+MEDIA="$(mktemp --suffix=.mp3)"
+trap 'rm -f "$MEDIA"' EXIT
+
+case "$INPUT" in
+  http://*|https://*)
+    stt_fetch_media "$INPUT" "$MEDIA" >&2 || exit 1
+    ;;
+  *)
+    [ -f "$INPUT" ] || { echo "ERROR: файл не найден: $INPUT" >&2; exit 1; }
+    MEDIA="$INPUT"
+    trap - EXIT
+    ;;
+esac
+
+stt_transcribe "$URL" "$KEY" "$MODEL" "$MEDIA" "$OUTPUT"

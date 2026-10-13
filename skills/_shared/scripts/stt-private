@@ -1,0 +1,29 @@
+#!/bin/bash
+# STT ПРИВАТНОЙ ветки: личные записи — голосовые от владельца, приватные встречи, диктовка.
+#
+# Провайдер только прямой или self-hosted: для персональных данных агрегаторы
+# запрещены. Проверка снаружи не доказывается — она на совести владельца при
+# выборе STT_PRIVATE_URL, поэтому дефолта здесь нет намеренно.
+#
+# Контракт конфигурации: STT_PRIVATE_URL, STT_PRIVATE_KEY, STT_PRIVATE_MODEL (обязательны),
+# STT_LANG (опц.). Источники и формат файла — в stt-lib.sh.
+#
+# usage: stt-private <файл> <выходной.txt>
+#   (в этой же форме её вызывает Hermes gateway для голосовых: {input_path} {output_path})
+
+set -euo pipefail
+. "$(dirname "$(readlink -f "$0")")/stt-lib.sh"
+
+if [ $# -ne 2 ]; then
+  echo "usage: stt-private <файл> <выходной.txt>" >&2
+  exit 2
+fi
+
+INPUT="$1"; OUTPUT="$2"
+[ -f "$INPUT" ] || { echo "ERROR: файл не найден: $INPUT" >&2; exit 1; }
+
+URL="$(stt_require STT_PRIVATE_URL "приватная ветка требует прямого провайдера (агрегаторы запрещены)")"
+KEY="$(stt_require STT_PRIVATE_KEY "ключ приватного провайдера")"
+MODEL="$(stt_require STT_PRIVATE_MODEL "модель распознавания (дефолтов в коде нет)")"
+
+stt_transcribe "$URL" "$KEY" "$MODEL" "$INPUT" "$OUTPUT"
