@@ -7,22 +7,44 @@
 #
 # Источники значений по приоритету:
 #   1) реальное окружение;
-#   2) файл конфигурации: $STT_ENV_FILE → <vault>/.env → ~/.hermes/.env,
-#      где <vault> = $WIKI_VAULT (по умолчанию ~/vault).
+#   2) файл конфигурации — первый существующий из кандидатов (см. stt_env_candidates).
 #      Формат файла: KEY=value, по строке, без экспорта.
 #
 # Обязательные параметры дефолтов не имеют: отсутствие → явная ошибка (exit 1),
 # а не тихая подмена провайдера или модели.
 
-STT_VAULT="${WIKI_VAULT:-$HOME/vault}"
+# Кандидаты файла конфигурации, в порядке приоритета:
+#   $STT_ENV_FILE          — точный путь, если задан;
+#   $STT_ENV_CANDIDATES    — список через ':' (личные абсолютные пути);
+#   $WIKI_VAULT/.env       — если владелец задал корень vault'а;
+#   $HOME/vault/.env       — типовой корень vault'а;
+#   $HOME/.hermes/.env     — конфигурация окружения агента.
+#
+# Не завязываться на один $HOME: у команды, запущенной агентом (gateway, песочница,
+# контейнер), HOME может быть /opt/data/home — тогда «типовой» путь уезжает.
+stt_env_candidates() {
+  [ -n "${STT_ENV_FILE:-}" ] && printf '%s\n' "$STT_ENV_FILE"
+  [ -n "${STT_ENV_CANDIDATES:-}" ] && printf '%s\n' "$STT_ENV_CANDIDATES" | tr ':' '\n'
+  [ -n "${WIKI_VAULT:-}" ] && printf '%s\n' "$WIKI_VAULT/.env"
+  printf '%s\n' "$HOME/vault/.env" "$HOME/.hermes/.env"
+}
 
-# Путь к файлу конфигурации (первый существующий; иначе ожидаемый по умолчанию).
+# Первый существующий кандидат; иначе первый ожидаемый (для сообщения об ошибке).
 stt_env_file() {
   local f
-  for f in "${STT_ENV_FILE:-}" "$STT_VAULT/.env" "$HOME/.hermes/.env"; do
+  while IFS= read -r f; do
     [ -n "$f" ] && [ -f "$f" ] && { printf '%s' "$f"; return 0; }
-  done
-  printf '%s' "${STT_ENV_FILE:-$STT_VAULT/.env}"
+  done < <(stt_env_candidates)
+  stt_env_candidates | head -1
+}
+
+# Все пути, где конфигурация искалась (для сообщения об ошибке).
+stt_env_tried() {
+  local out=""
+  while IFS= read -r f; do
+    [ -n "$f" ] && out="${out}${out:+, }$f"
+  done < <(stt_env_candidates)
+  printf '%s' "$out"
 }
 
 _stt_raw() { # $1 = имя переменной: окружение → файл конфигурации
@@ -44,7 +66,8 @@ stt_require() { # $1 = имя, $2 = подсказка, $3 = устаревши�
   local val; val="$(stt_load "$1" "${3:-}")"
   if [ -z "$val" ]; then
     echo "ERROR: $1 не задан — $2" >&2
-    echo "       куда положить: $(stt_env_file) (формат: $1=значение)" >&2
+    echo "       значение берётся из окружения или из файла (формат строки: $1=значение)" >&2
+    echo "       искал здесь: $(stt_env_tried)" >&2
     exit 1
   fi
   printf '%s' "$val"
