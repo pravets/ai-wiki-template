@@ -8,6 +8,7 @@
 
 | Скилл | Назначение |
 |---|---|
+| [wiki-init](wiki-init/SKILL.md) | первичная настройка vault'а: вопросы, схема, подрезка зон |
 | [wiki-ingest](wiki-ingest/SKILL.md) | ингвест источника: inbox → raw → wiki → index/log |
 | [wiki-query](wiki-query/SKILL.md) | query-only исследование базы |
 | [wiki-lint](wiki-lint/SKILL.md) | гигиена: сироты, противоречия, конфликты |
