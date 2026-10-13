@@ -21,3 +21,32 @@ node_modules/
 # Python bytecode (helpers are run directly, caches are not source)
 __pycache__/
 *.pyc
+
+# Сырьё в репозиторий не коммитим — только разобранный материал (правило 9 контракта).
+# Репозиторий заметок остаётся текстовым: диффится, переносится, не пухнет.
+# Осознанное исключение — только явно: git add -f <файл>.
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.avi
+*.mp3
+*.m4a
+*.wav
+*.ogg
+*.flac
+*.opus
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.heic
+*.tif
+*.tiff
+*.bmp
+*.pdf
+*.zip
+*.7z
+*.tar
+*.gz
