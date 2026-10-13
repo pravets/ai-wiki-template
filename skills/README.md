@@ -10,6 +10,7 @@
 |---|---|
 | [wiki-init](wiki-init/SKILL.md) | первичная настройка vault'а: вопросы, схема, подрезка зон |
 | [wiki-ingest](wiki-ingest/SKILL.md) | ингвест источника: inbox → raw → wiki → index/log |
+| [wiki-verify](wiki-verify/SKILL.md) | проверка утверждений: источник → живая сверка → flags |
 | [wiki-query](wiki-query/SKILL.md) | query-only исследование базы |
 | [wiki-lint](wiki-lint/SKILL.md) | гигиена: сироты, противоречия, конфликты |
 | [wiki-poi](wiki-poi/SKILL.md) | точки интереса: место → координаты → заметка + карта |

@@ -39,11 +39,16 @@
 
 Только после этого ингвест, ответ на вопрос или линт. На больших vault'ах (100+ страниц) добавить поиск по теме перед созданием новой страницы.
 
+Дополнительно: **`90-meta/known-concepts.md`** — что владелец уже знает. Влияет на подробность объяснений (не пересказывать известное), но не на факты.
+
+Утверждения из пересказа (рил, пост, обзор) перед записью проходят проверку по `skills/wiki-verify`.
+
 ## Типы заметок и frontmatter
 
 | Тип заметки | Зона | Шаблон | Обязательно |
 |---|---|---|---|
 | Знание (entity/concept) | `10-wiki/` | `templates/wiki-concept.md` | `tags`, `sources` |
+| Разбор инструмента | `10-wiki/` | `templates/tool-review.md` | `status`, `verdict`, `sources`, `checked` |
 | Карточка человека | `20-people/` | `templates/person.md` | `name`, `type`, `status` |
 | Взаимодействие | `25-interactions/` | `templates/interaction.md` | `date`, `person`, `type` |
 | Ежедневная заметка | `30-journal/` | `templates/daily.md` | `date` |

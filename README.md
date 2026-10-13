@@ -2,7 +2,7 @@
 
 Личная база знаний (`vault`) по паттерну **LLM Wiki** (raw → wiki → schema) с гибридным авторством: часть контента пишет человек, часть — ИИ-агент. Obsidian = IDE, агент = программист, vault = код.
 
-Шаблон задаёт **структуру зон + систему прав (ACL-маркеры) + модель данных + набор шаблонов** для безопасной совместной работы человека и агента в одном репозитории заметок.
+Шаблон задаёт **структуру зон + систему прав (ACL-маркеры) + модель данных + набор шаблонов + процедуры** для безопасной совместной работы человека и агента в одном репозитории заметок.
 
 ## Что внутри
 
@@ -26,7 +26,7 @@
 |---|---|---|
 | 00-inbox | rw | приёмная: клиппер, быстрые заметки |
 | 01-raw | ro | исходники (текст), неизменяемые |
-| 10-wiki | rw | знания: entity/concept-страницы, обзоры |
+| 10-wiki | rw | знания: entity/concept-страницы, обзоры, разборы инструментов |
 | 20-people | rw | люди: карточки + диктовка юзера |
 | 25-interactions | append | взаимодействия |
 | 30-journal | ro | ежедневные заметки |
@@ -42,13 +42,17 @@
 
 Третий слой паттерна: **какие бывают заметки, как устроены и связаны**. Типы заметок и их frontmatter, именование (слаги), связность и минимальные ссылки, таксономия тегов, пороги создания страниц, провенанс, политика противоречий, ротация журнала. Протокол ориентации (читать schema → index → log перед работой) — в `AGENTS.md`.
 
+### Что владелец уже знает (`90-meta/known-concepts.md`)
+
+Скип-лист компетенций: агент не переобъясняет известное, а идёт сразу к trade-offs. Влияет на подробность объяснений, не на факты.
+
 ### Шаблоны (`90-meta/templates/`)
 
-`person`, `interaction`, `project`, `talk-project`, `draft-ideas`, `poi`, `trip`, `wiki-concept`, `daily`, а также лайф-админ: `lifeadmin-profile`, `lifeadmin-provider`, `lifeadmin-month`, `lifeadmin-report`.
+`person`, `interaction`, `project`, `talk-project`, `draft-ideas`, `poi`, `trip`, `wiki-concept`, `tool-review`, `daily`, а также лайф-админ: `lifeadmin-profile`, `lifeadmin-provider`, `lifeadmin-month`, `lifeadmin-report`.
 
 ### Скиллы (`skills/`)
 
-Процедуры для ИИ-агентов: [wiki-init](skills/wiki-init/SKILL.md) (первичная настройка), [wiki-ingest](skills/wiki-ingest/SKILL.md) (ингвест), [wiki-poi](skills/wiki-poi/SKILL.md) (точки интереса), [wiki-people](skills/wiki-people/SKILL.md) (карточки людей), [wiki-transcript-common](skills/wiki-transcript-common/SKILL.md) / [wiki-transcript-private](skills/wiki-transcript-private/SKILL.md) (транскрибация: публичное / личное), [wiki-ocr](skills/wiki-ocr/SKILL.md) (распознавание текста), [wiki-query](skills/wiki-query/SKILL.md) (исследование), [wiki-lint](skills/wiki-lint/SKILL.md) (гигиена). Формат и подключение — в [skills/README.md](skills/README.md).
+Процедуры для ИИ-агентов: [wiki-init](skills/wiki-init/SKILL.md) (первичная настройка), [wiki-ingest](skills/wiki-ingest/SKILL.md) (ингвест), [wiki-verify](skills/wiki-verify/SKILL.md) (проверка утверждений и аудит записанного), [wiki-poi](skills/wiki-poi/SKILL.md) (точки интереса), [wiki-people](skills/wiki-people/SKILL.md) (карточки людей), [wiki-transcript-common](skills/wiki-transcript-common/SKILL.md) / [wiki-transcript-private](skills/wiki-transcript-private/SKILL.md) (транскрибация: публичное / личное), [wiki-ocr](skills/wiki-ocr/SKILL.md) (распознавание текста), [wiki-query](skills/wiki-query/SKILL.md) (исследование), [wiki-lint](skills/wiki-lint/SKILL.md) (гигиена). Формат и подключение — в [skills/README.md](skills/README.md).
 
 ## Развёртывание
 
@@ -60,14 +64,14 @@
    - **Tasks** — задачи и сроки (📅⏫)
    - **Map View** — карта POI по ключу `location`
 4. **Инициализировать**: попросить своего агента «инициализируй вики». Процедура `wiki-init` проведёт по вопросам (домен, не-цели, язык, подпись владельца, какие зоны оставить, стартовые теги), заполнит `90-meta/schema.md`, удалит ненужные зоны и сделает первую запись в журнале.
-5. Ознакомиться с [`AGENTS.md`](AGENTS.md) (права и правила) и `90-meta/schema.md` (модель данных), поправить под себя.
+5. Ознакомиться с [`AGENTS.md`](AGENTS.md) (права и правила) и `90-meta/schema.md` (модель данных), поправить под себя. Заполнить `90-meta/known-concepts.md` — что вы уже знаете, чтобы агент не пересказывал основы.
 
 ## Правила для AGENTS.md
 
 Работа агента в vault строится на «железных правилах»:
 - Перед любой операцией — сориентироваться: schema → index → последние записи log.
 - Не выдумывать факты о реальном мире; записи по диктовке помечать.
-- Каждый факт в `10-wiki` — со ссылкой на источник.
+- Каждый факт в `10-wiki` — со ссылкой на источник; утверждения из пересказа (рил, пост, обзор) — проверять по `wiki-verify` до записи.
 - Append-only для журналов; `30-journal` не редактировать.
 - Даты ISO 8601, ссылки `[[wikilink]]`.
 
