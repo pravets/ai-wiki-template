@@ -14,6 +14,7 @@
 | [wiki-query](wiki-query/SKILL.md) | query-only исследование базы |
 | [wiki-lint](wiki-lint/SKILL.md) | гигиена: сироты, противоречия, конфликты |
 | [wiki-poi](wiki-poi/SKILL.md) | точки интереса: место → координаты → заметка + карта |
+| [wiki-precedent](wiki-precedent/SKILL.md) | прецедентные тексты: цитата → проверка атрибуции → карточка → подбор под слайд |
 | [wiki-people](wiki-people/SKILL.md) | карточки людей: контракт frontmatter, диктовка, ревью-гейт |
 | [wiki-transcript-common](wiki-transcript-common/SKILL.md) | транскрибация неприватного: видео, подкасты, эфиры |
 | [wiki-transcript-private](wiki-transcript-private/SKILL.md) | транскрибация личного: голосовые, приватные встречи |
@@ -31,7 +32,7 @@
 
 > **Хелперы** ([`_shared/scripts/`](_shared/scripts/)):
 > - `stt-private <файл> <выходной.txt>` и `stt-public <ссылка|файл> <выходной.txt>` — транскрибация, две ветки по приватности. Вендор-нейтрально: годится любой провайдер с OpenAI-совместимым `POST /v1/audio/transcriptions`; `stt-public` сам скачивает дорожку из ссылки (`yt-dlp` + `ffmpeg`). Про ветки — [wiki-transcript-private](wiki-transcript-private/SKILL.md) и [wiki-transcript-common](wiki-transcript-common/SKILL.md).
-> - `split_transcript.py` — разрез однострочного транскрипта; `verify_terms.py` — проверка термина по исходнику; `pdf_layer_check.py` — постраничный вердикт о текстовом слое PDF (`text-layer` / `needs-ocr` / `ambiguous` — нужен poppler, Python-зависимостей нет).
+> - `split_transcript.py` — разрез однострочного транскрипта; `verify_terms.py` — проверка термина по исходнику; `pdf_layer_check.py` — постраничный вердикт о текстовом слое PDF (`text-layer` / `needs-ocr` / `ambiguous` — нужен poppler, Python-зависимостей нет); `precedent_check.py` — валидация банка цитат `15-precedent/`: обязательные поля, `attribution`, словарь тем/приёмов, дубли по нормализованному тексту.
 
 > **Самопроверка хелпера:** `python3 _shared/scripts/tests/self_test.py` — собирает фикстуры (цифровой PDF, скан, смешанный) и проверяет вердикты, точность слоя и мост «растеризация → tesseract». Требуется poppler; Pillow и tesseract необязательны (их отсутствие даёт пропуск, а не провал).
 

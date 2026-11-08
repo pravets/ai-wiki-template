@@ -27,6 +27,7 @@
 | 00-inbox | rw | приёмная: клиппер, быстрые заметки |
 | 01-raw | ro | исходники (текст), неизменяемые |
 | 10-wiki | rw | знания: entity/concept-страницы, обзоры, разборы инструментов |
+| 15-precedent | rw | прецедентные тексты: банк цитат, карточки источников, хаб и словарь тем |
 | 20-people | rw | люди: карточки + диктовка юзера |
 | 25-interactions | append | взаимодействия |
 | 30-journal | ro | ежедневные заметки |
@@ -48,18 +49,18 @@
 
 ### Шаблоны (`90-meta/templates/`)
 
-`person`, `interaction`, `project`, `talk-project`, `draft-ideas`, `poi`, `trip`, `wiki-concept`, `tool-review`, `daily`, а также лайф-админ: `lifeadmin-profile`, `lifeadmin-provider`, `lifeadmin-month`, `lifeadmin-report`.
+`person`, `interaction`, `project`, `talk-project`, `draft-ideas`, `poi`, `trip`, `precedent`, `wiki-concept`, `tool-review`, `daily`, а также лайф-админ: `lifeadmin-profile`, `lifeadmin-provider`, `lifeadmin-month`, `lifeadmin-report`.
 
 ### Скиллы (`skills/`)
 
-Процедуры для ИИ-агентов: [wiki-init](skills/wiki-init/SKILL.md) (первичная настройка), [wiki-ingest](skills/wiki-ingest/SKILL.md) (ингвест), [wiki-verify](skills/wiki-verify/SKILL.md) (проверка утверждений и аудит записанного), [wiki-poi](skills/wiki-poi/SKILL.md) (точки интереса), [wiki-people](skills/wiki-people/SKILL.md) (карточки людей), [wiki-transcript-common](skills/wiki-transcript-common/SKILL.md) / [wiki-transcript-private](skills/wiki-transcript-private/SKILL.md) (транскрибация: публичное / личное), [wiki-ocr](skills/wiki-ocr/SKILL.md) (распознавание текста), [wiki-query](skills/wiki-query/SKILL.md) (исследование), [wiki-lint](skills/wiki-lint/SKILL.md) (гигиена). Формат и подключение — в [skills/README.md](skills/README.md).
+Процедуры для ИИ-агентов: [wiki-init](skills/wiki-init/SKILL.md) (первичная настройка), [wiki-ingest](skills/wiki-ingest/SKILL.md) (ингвест), [wiki-verify](skills/wiki-verify/SKILL.md) (проверка утверждений и аудит записанного), [wiki-poi](skills/wiki-poi/SKILL.md) (точки интереса), [wiki-precedent](skills/wiki-precedent/SKILL.md) (прецедентные тексты: цитаты, проверка атрибуции, подбор под слайд), [wiki-people](skills/wiki-people/SKILL.md) (карточки людей), [wiki-transcript-common](skills/wiki-transcript-common/SKILL.md) / [wiki-transcript-private](skills/wiki-transcript-private/SKILL.md) (транскрибация: публичное / личное), [wiki-ocr](skills/wiki-ocr/SKILL.md) (распознавание текста), [wiki-query](skills/wiki-query/SKILL.md) (исследование), [wiki-lint](skills/wiki-lint/SKILL.md) (гигиена). Формат и подключение — в [skills/README.md](skills/README.md).
 
 ## Развёртывание
 
 1. **Клонировать**: `git clone <repo-url> ai-wiki` (или «Download ZIP»).
 2. **Открыть** папку как vault в Obsidian.
 3. **Установить плагины из каталога сообщества** (перечислены в `.obsidian/community-plugins.json`):
-   - **Dataview** — таблицы по frontmatter (взаимодействия на карточках людей, poi-map)
+   - **Dataview** — таблицы по frontmatter (взаимодействия на карточках людей, poi-map, хаб банка цитат)
    - **Obsidian Git** — автосинк/бэкап заметок
    - **Tasks** — задачи и сроки (📅⏫)
    - **Map View** — карта POI по ключу `location`
