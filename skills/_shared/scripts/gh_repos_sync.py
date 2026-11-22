@@ -68,7 +68,7 @@ def gh(args):
     return out.stdout
 
 
-def fetch_repos(include_forks):
+def fetch_repos(include_forks, check_forks=True):
     repos = []
     page = 1
     me = gh(["api", "user", "--jq", ".login"]).strip()
@@ -85,8 +85,6 @@ def fetch_repos(include_forks):
         page += 1
     result = []
     for r in repos:
-        if r.get("fork") and not include_forks:
-            continue
         perms = r.get("permissions") or {}
         if perms.get("admin") or perms.get("maintain"):
             role = "maintainer"
@@ -96,13 +94,28 @@ def fetch_repos(include_forks):
             role = "watcher"
         if r.get("archived"):
             role = "archived"
+        parent = (r.get("parent") or {}).get("full_name") or ""
+        parent_branch = (r.get("parent") or {}).get("default_branch") or "main"
+        ahead = 0
+        if r.get("fork") and check_forks:
+            if not parent:
+                parent, parent_branch = fork_info(r["full_name"])
+            if parent:
+                ahead = fork_ahead(r["full_name"], parent_branch,
+                                   r.get("default_branch") or "main")
+            if ahead == 0 and not include_forks:
+                continue
+            role = "fork" if ahead else "watcher"
+        elif r.get("fork") and not include_forks:
+            continue
         result.append({
             "full_name": r["full_name"],
             "owner": r["owner"]["login"],
             "name": r["name"],
-            "slug": r["full_name"].lower().replace("/", "-").replace("_", "-"),
+            "slug": r["full_name"].lower().replace("/", "-").replace("_", "-").replace(".", "-"),
             "role": role,
             "fork": bool(r.get("fork")),
+            "ahead": ahead,
             "archived": bool(r.get("archived")),
             "private": bool(r.get("private")),
             "description": (r.get("description") or "").strip(),
@@ -116,9 +129,42 @@ def fetch_repos(include_forks):
             "html_url": r.get("html_url") or "",
             "topics": r.get("topics") or [],
             "license": ((r.get("license") or {}).get("spdx_id") or ""),
-            "parent": ((r.get("parent") or {}).get("full_name") or ""),
+            "parent": parent,
         })
     return me, result
+
+
+def fork_info(full_name):
+    """parent (owner/name) и его default_branch: в списочном ответе их нет."""
+    try:
+        out = subprocess.run(["gh", "api", f"repos/{full_name}", "--jq",
+                              '[.parent.full_name // "", .parent.default_branch // "main"] | @tsv'],
+                             capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return "", "main"
+    if out.returncode != 0:
+        return "", "main"
+    parts = out.stdout.strip().split("\t")
+    return (parts[0] if parts else ""), (parts[1] if len(parts) > 1 else "main")
+
+
+def fork_ahead(full_name, parent_branch, my_branch):
+    """Сколько моих коммитов в форке сверх upstream. 0 — зеркало, не проект."""
+    for base in dict.fromkeys([parent_branch, "main", "master"]):
+        try:
+            out = subprocess.run(
+                ["gh", "api", f"repos/{full_name}/compare/{base}...{my_branch}",
+                 "--jq", ".ahead_by"],
+                capture_output=True, text=True, timeout=60)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if out.returncode != 0:
+            continue
+        try:
+            return int(out.stdout.strip() or 0)
+        except ValueError:
+            continue
+    return 0
 
 
 def parse_card(text):
@@ -183,6 +229,7 @@ stack: [{stack}]
 ROLE_NOTE = {
     "maintainer": "Мейнтейнер: права admin/maintain. Решения по PR и релизам — мои.",
     "contributor": "Контрибьютор: права push/triage без admin. Мои изменения идут через PR к чужому мейнтейнеру.",
+    "fork": "Свой форк с собственными коммитами сверх upstream: правлю под себя, upstream тяну по необходимости.",
     "watcher": "Только чтение: права pull. Слежу, не участвую.",
     "archived": "Репозиторий заархивирован: не развивается, карточка хранится как история.",
 }
@@ -207,13 +254,13 @@ def status_for(repo, stale_days):
 
 
 def build_card(repo, stale_days):
-    tags = []
-    if repo["stack"]:
-        tags.append(repo["stack"] if repo["stack"] in
-                    {"1c", "python", "javascript", "typescript", "java", "shell", "go",
-                     "rust", "c", "cpp", "html", "css", "lua", "php", "ruby", "vue"} else repo["stack"])
-    if repo["role"] == "maintainer":
-        tags.append("tools")
+    # tags — домен из общего словаря; язык живёт в `stack`, в теги его не тащим
+    if repo["stack"] == "1c":
+        tags = ["1c", "tools"]
+    elif repo["role"] == "maintainer":
+        tags = ["tools"]
+    else:
+        tags = []
     tags = tags[:2]
     extra = ""
     if repo["fork"] and repo["parent"]:
@@ -236,14 +283,14 @@ def build_card(repo, stale_days):
 
 def hub_markdown(repos, cards):
     lines = [
-        "# 42-repos — GitHub-проекты",
+        "# 42-repos — хаб",
         "",
-        "Репозитории, где я мейнтейнер или контрибьютор. **Таблица генерируется** "
-        "`gh_repos_sync.py --hub` из GitHub + frontmatter карточек; руками не править.",
+        "Репозитории, где я мейнтейнер, контрибьютор или веду свой форк. **Таблица "
+        "генерируется** `gh_repos_sync.py --hub` из GitHub + frontmatter карточек; "
+        "руками не править — правка будет перезаписана.",
         "",
-        "Контракт зоны — [[42-repos/README]]. Журнал событий — [[42-repos/log]].",
-        "",
-        f"_Сгенерировано {date.today().isoformat()}; форки не учитываются._",
+        f"_Сгенерировано {date.today().isoformat()}. Контракт зоны — [[42-repos/README]], "
+        "журнал событий — [[42-repos/log]]._",
         "",
         "## Мейнтейнер",
         "",
@@ -251,7 +298,8 @@ def hub_markdown(repos, cards):
         "|---|---|---|---|---|---|",
     ]
     for group, title in (("maintainer", "## Мейнтейнер"), ("contributor", "## Контрибьютор"),
-                         ("watcher", "## Наблюдаю"), ("archived", "## Архив")):
+                         ("fork", "## Свои форки"), ("watcher", "## Наблюдаю"),
+                         ("archived", "## Архив")):
         rows = [r for r in repos if r["role"] == group]
         if not rows:
             continue
@@ -273,7 +321,9 @@ def main():
     ap.add_argument("--vault")
     ap.add_argument("--write", action="store_true")
     ap.add_argument("--hub", action="store_true", help="перегенерировать README хаба зоны")
-    ap.add_argument("--forks", action="store_true")
+    ap.add_argument("--forks", action="store_true", help="включить все форки, даже зеркала")
+    ap.add_argument("--no-fork-check", action="store_true",
+                    help="не проверять форки через compare (быстрее, но пропустит свои форки)")
     ap.add_argument("--stale", type=int, default=180, help="дней до status: paused")
     ap.add_argument("--max-age", type=int, default=365,
                     help="карточки только для репозиториев с push за N дней; 0 — все")
@@ -283,7 +333,7 @@ def main():
 
     vault = find_vault(args.vault)
     zone = os.path.join(vault, "42-repos")
-    me, repos = fetch_repos(args.forks)
+    me, repos = fetch_repos(args.forks, check_forks=not args.no_fork_check)
     cards = existing_cards(vault)
 
     missing = [r for r in repos if r["full_name"] not in cards]
@@ -291,7 +341,7 @@ def main():
              or (r["pushed_at"] and _days_since(r["pushed_at"]) <= args.max_age)]
     drift = [(r, cards[r["full_name"]]) for r in repos
              if r["full_name"] in cards and cards[r["full_name"]][1].get("role") not in (r["role"], None, "")]
-    gone = [name for name, fm in cards.items()
+    gone = [name for name, (fname, fm) in cards.items()
             if fm.get("repo") and name not in {r["full_name"] for r in repos}]
 
     if args.json:
@@ -302,14 +352,14 @@ def main():
                             "card": c[1].get("role")} for r, c in drift],
             "cards_without_repo": gone,
             "by_role": {role: sum(1 for r in repos if r["role"] == role)
-                        for role in ("maintainer", "contributor", "watcher", "archived")},
+                        for role in ("maintainer", "contributor", "fork", "watcher", "archived")},
         }, ensure_ascii=False, indent=1))
         return 0
 
     print(f"аккаунт: {me}")
     print(f"vault:   {vault}")
     print(f"репозиториев (без форков): {len(repos)}")
-    for role in ("maintainer", "contributor", "watcher", "archived"):
+    for role in ("maintainer", "contributor", "fork", "watcher", "archived"):
         n = sum(1 for r in repos if r["role"] == role)
         print(f"  {role:12s} {n}")
     print(f"карточек в 42-repos: {len(cards)}")
@@ -344,7 +394,7 @@ def main():
         cards = existing_cards(vault)
 
     if args.hub:
-        path = os.path.join(zone, "README.md")
+        path = os.path.join(zone, "hub.md")
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(hub_markdown(repos, cards))
         print(f"хаб перегенерирован: {os.path.relpath(path, vault)}")
