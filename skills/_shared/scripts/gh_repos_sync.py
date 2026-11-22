@@ -282,38 +282,45 @@ def build_card(repo, stale_days):
 
 
 def hub_markdown(repos, cards):
+    """Хаб показывает только репозитории с карточками: зона наполняется точечно."""
+    with_cards = [r for r in repos if r["full_name"] in cards]
+    without = [r for r in repos if r["full_name"] not in cards]
     lines = [
         "# 42-repos — хаб",
         "",
-        "Репозитории, где я мейнтейнер, контрибьютор или веду свой форк. **Таблица "
-        "генерируется** `gh_repos_sync.py --hub` из GitHub + frontmatter карточек; "
-        "руками не править — правка будет перезаписана.",
+        "Репозитории с карточками в этой зоне. **Таблица генерируется** "
+        "`gh_repos_sync.py --hub` из GitHub + frontmatter карточек; руками не править — "
+        "правка будет перезаписана.",
         "",
         f"_Сгенерировано {date.today().isoformat()}. Контракт зоны — [[42-repos/README]], "
         "журнал событий — [[42-repos/log]]._",
         "",
-        "## Мейнтейнер",
+        f"Карточек: {len(with_cards)} из {len(repos)} репозиториев с доступом "
+        f"(ещё {len(without)} без карточки — это норма: зона наполняется точечно, "
+        "а не пакетно).",
         "",
-        "| Репозиторий | Карточка | Стек | Состояние | Push | ⭐ |",
-        "|---|---|---|---|---|---|",
     ]
+    got_section = False
     for group, title in (("maintainer", "## Мейнтейнер"), ("contributor", "## Контрибьютор"),
                          ("fork", "## Свои форки"), ("watcher", "## Наблюдаю"),
                          ("archived", "## Архив")):
-        rows = [r for r in repos if r["role"] == group]
+        rows = [r for r in with_cards if r["role"] == group]
         if not rows:
             continue
-        if group != "maintainer":
-            lines += ["", title, "",
-                      "| Репозиторий | Карточка | Стек | Состояние | Push | ⭐ |",
-                      "|---|---|---|---|---|---|"]
+        got_section = True
+        lines += [title, "",
+                  "| Репозиторий | Карточка | Стек | Состояние | Push | ⭐ |",
+                  "|---|---|---|---|---|---|"]
         for r in sorted(rows, key=lambda x: x["pushed_at"], reverse=True):
-            card = cards.get(r["full_name"])
-            link = f"[[42-repos/{card[0][:-3]}]]" if card else "_нет_"
-            status = (card[1].get("status") if card else "") or status_for(r, 365)
+            card = cards[r["full_name"]]
+            link = f"[[42-repos/{card[0][:-3]}]]"
+            status = card[1].get("status") or status_for(r, 365)
             lines.append(f"| [{r['full_name']}]({r['html_url']}) | {link} | "
                          f"{r['language'] or '—'} | {status} | {r['pushed_at']} | {r['stars']} |")
-    return "\n".join(lines) + "\n"
+        lines.append("")
+    if not got_section:
+        lines.append("_Карточек пока нет._")
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def main():
