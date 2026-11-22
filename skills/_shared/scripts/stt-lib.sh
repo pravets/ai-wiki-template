@@ -85,7 +85,7 @@ stt_transcribe() {
   local body code tmp
   tmp="$(mktemp)"
   body="$(curl -sS -X POST "$endpoint" \
-        -H "Authorization: Bearer $key" \
+        -H "Authorization: Bearer ${key}" \
         -F "file=@$input" \
         -F "model=$model" \
         ${lang:+-F "language=$lang"} \

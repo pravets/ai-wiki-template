@@ -402,12 +402,25 @@ def is_graduated_fork(repo, cards):
             and bool(card) and card[1].get("role") == "maintainer")
 
 
-def hub_markdown(repos, cards, total=None, forks_total=None, own_card_split=None):
-    """Хаб показывает только репозитории с карточками: зона наполняется точечно."""
-    mine = [r for r in repos if not r.get("foreign")]
-    foreign = [r for r in repos if r.get("foreign")]
+def hub_markdown(repos, cards, total=None, forks_total=None, own_card_split=None, me=None):
+    """Хаб показывает только репозитории с карточками: зона наполняется точечно.
+
+    «Свои» — это репозитории, где владелец я, а не всё, к чему есть доступ: репозитории
+    чужих владельцев с правами `write` (карточки контрибьютора) учитываются отдельно,
+    иначе счётчик называет чужие проекты своими.
+    """
+    if me:
+        mine = [r for r in repos if not r.get("foreign")
+                and (r.get("owner") or "").lower() == me.lower()]
+        foreign = [r for r in repos if r not in mine]
+    else:
+        mine = [r for r in repos if not r.get("foreign")]
+        foreign = [r for r in repos if r.get("foreign")]
     with_cards = [r for r in mine if r["full_name"] in cards]
     without = [r for r in mine if r["full_name"] not in cards]
+    # На чужих репозиториях таблица показывает только карточки: доступ к чужим
+    # организациям (write, без карточки) — не проект и в хаб не попадает.
+    foreign = [r for r in foreign if r["full_name"] in cards]
     # Знаменатель берётся из полного списка репозиториев с доступом, а не из отфильтрованного:
     # иначе счётчик меняется от того, гоняли ли проверку форков.
     total = total or len(repos)
@@ -583,7 +596,7 @@ def main():
         path = os.path.join(zone, "hub.md")
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(hub_markdown(repos + foreign, cards, total_repos, forks_total,
-                                  (len(own_cards) - fork_cards, fork_cards)))
+                                  (len(own_cards) - fork_cards, fork_cards), me))
         print(f"хаб перегенерирован: {os.path.relpath(path, vault)}")
 
     if not args.write and not args.hub:
