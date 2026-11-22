@@ -134,7 +134,7 @@ def fetch_repos(include_forks, check_forks=True, keep_forks=()):
             "parent": parent,
             "parent_branch": parent_branch,
         })
-    return me, result
+    return me, result, len(repos), sum(1 for r in repos if r.get("fork"))
 
 
 def fork_info(full_name):
@@ -402,12 +402,22 @@ def is_graduated_fork(repo, cards):
             and bool(card) and card[1].get("role") == "maintainer")
 
 
-def hub_markdown(repos, cards):
+def hub_markdown(repos, cards, total=None, forks_total=None, own_card_split=None):
     """Хаб показывает только репозитории с карточками: зона наполняется точечно."""
     mine = [r for r in repos if not r.get("foreign")]
     foreign = [r for r in repos if r.get("foreign")]
     with_cards = [r for r in mine if r["full_name"] in cards]
     without = [r for r in mine if r["full_name"] not in cards]
+    # Знаменатель берётся из полного списка репозиториев с доступом, а не из отфильтрованного:
+    # иначе счётчик меняется от того, гоняли ли проверку форков.
+    total = total or len(repos)
+    forks_total = forks_total or 0
+    projects = total - forks_total
+    split = own_card_split or (len(with_cards), 0)
+    fact_line = (f"Карточек: {len(with_cards)} своих "
+                 f"({split[0]} на репозиториях, {split[1]} на своих форках со своей линией) "
+                 f"+ {len(foreign)} на чужих. Всего репозиториев с доступом {total}, "
+                 f"из них {forks_total} форков — зеркала карточек не получают.")
     rows_all = with_cards + foreign
     lines = [
         "# 42-repos — хаб",
@@ -421,20 +431,17 @@ def hub_markdown(repos, cards):
         "",
     ]
     if foreign:
-        lines += [
-            f"Карточек: {len(with_cards)} из {len(mine)} своих репозиториев "
-            f"(ещё {len(without)} без карточки — это норма: зона наполняется точечно, "
-            "а не пакетно), плюс {n} в чужих проектах, где я контрибьютор.".format(
-                n=len(foreign)),
-            "",
-        ]
+        # Чужие карточки бывают разных ролей (контрибьютор, мейнтейнер своей линии в
+        # чужом владении, наблюдатель) — счётчик не должен называть всех контрибьюторами.
+        roles = {}
+        for r in foreign:
+            role = card_role(r, cards)
+            roles[role] = roles.get(role, 0) + 1
+        by_role = ", ".join(f"{n} {role}" for role, n in
+                            sorted(roles.items(), key=lambda kv: -kv[1]))
+        lines += [fact_line + f" Чужие карточки по ролям: {by_role}.", ""]
     else:
-        lines += [
-            f"Карточек: {len(with_cards)} из {len(mine)} репозиториев с доступом "
-            f"(ещё {len(without)} без карточки — это норма: зона наполняется точечно, "
-            "а не пакетно).",
-            "",
-        ]
+        lines += [fact_line, ""]
     got_section = False
     for group, title in (("maintainer", "## Мейнтейнер"), ("contributor", "## Контрибьютор"),
                          ("fork", "## Свои форки"), ("watcher", "## Наблюдаю"),
@@ -479,8 +486,8 @@ def main():
     # Форки с карточкой maintainer тянем всегда: своя линия может жить не в default-ветке.
     keep_forks = {n for n, (f, fm) in cards.items()
                   if fm.get("role") == "maintainer" and fm.get("upstream")}
-    me, repos = fetch_repos(args.forks, check_forks=not args.no_fork_check,
-                            keep_forks=keep_forks)
+    me, repos, total_repos, forks_total = fetch_repos(
+        args.forks, check_forks=not args.no_fork_check, keep_forks=keep_forks)
 
     # Своя линия может жить не в ветке по умолчанию (master = апстрим, работа в develop).
     # Проверяем только репозитории с карточками — их единицы, а не все форки.
@@ -570,9 +577,13 @@ def main():
         cards = existing_cards(vault)
 
     if args.hub:
+        own_cards = [fm for name, (f, fm) in cards.items()
+                     if name.split("/")[0].lower() == me.lower()]
+        fork_cards = sum(1 for fm in own_cards if fm.get("upstream"))
         path = os.path.join(zone, "hub.md")
         with open(path, "w", encoding="utf-8") as fh:
-            fh.write(hub_markdown(repos + foreign, cards))
+            fh.write(hub_markdown(repos + foreign, cards, total_repos, forks_total,
+                                  (len(own_cards) - fork_cards, fork_cards)))
         print(f"хаб перегенерирован: {os.path.relpath(path, vault)}")
 
     if not args.write and not args.hub:
