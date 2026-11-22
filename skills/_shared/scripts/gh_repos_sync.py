@@ -470,8 +470,10 @@ def hub_markdown(repos, cards, total=None, forks_total=None, own_card_split=None
             card = cards[r["full_name"]]
             link = f"[[42-repos/{card[0][:-3]}]]"
             status = card[1].get("status") or status_for(r, 365)
+            # Язык у мультимодульных репозиториев может быть null в API — тогда берём стек из карточки.
+            lang = r["language"] or card[1].get("stack", "").strip("[]").replace(",", ", ") or "—"
             lines.append(f"| [{r['full_name']}]({r['html_url']}) | {link} | "
-                         f"{r['language'] or '—'} | {status} | {r['pushed_at']} | {r['stars']} |")
+                         f"{lang} | {status} | {r['pushed_at']} | {r['stars']} |")
         lines.append("")
     if not got_section:
         lines.append("_Карточек пока нет._")
