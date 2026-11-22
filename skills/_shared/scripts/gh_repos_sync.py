@@ -179,6 +179,39 @@ def parse_card(text):
     return fm, text[m.end():]
 
 
+def fetch_foreign(cards, mine_names):
+    """Карточки чужих проектов: репозиторий не в моём аккаунте, роль берётся из карточки.
+
+    Контрибьютор в чужом проекте — нормальный случай зоны: PR идут в upstream, своего
+    репозитория может не быть вовсе, а форк бывает чистым зеркалом (`ahead_by = 0`),
+    который правило 5 в зону не пускает. Поэтому карточка живёт с `repo:` чужого
+    владельца, а метаданные для хаба подтягиваются точечно через API.
+    """
+    foreign, missing = [], []
+    for full_name, (fname, fm) in sorted(cards.items()):
+        if full_name in mine_names:
+            continue
+        try:
+            out = gh(["api", f"repos/{full_name}", "--jq",
+                      '[.full_name, .html_url, (.language // ""), (.pushed_at // ""), '
+                      '(.stargazers_count // 0), (.archived // false), (.description // "")] | @tsv'])
+        except SystemExit:
+            missing.append(full_name)
+            continue
+        parts = out.rstrip("\n").split("\t")
+        if len(parts) < 5:
+            missing.append(full_name)
+            continue
+        foreign.append({
+            "full_name": parts[0], "html_url": parts[1], "language": parts[2],
+            "pushed_at": parts[3][:10], "stars": int(parts[4] or 0),
+            "archived": parts[5] == "true", "description": parts[6] if len(parts) > 6 else "",
+            "role": fm.get("role") or "watcher", "foreign": True, "fork": False,
+            "ahead": 0, "slug": parts[0].lower().replace("/", "-"),
+        })
+    return foreign, missing
+
+
 def existing_cards(vault):
     zone = os.path.join(vault, "42-repos")
     cards = {}
@@ -306,8 +339,11 @@ def is_graduated_fork(repo, cards):
 
 def hub_markdown(repos, cards):
     """Хаб показывает только репозитории с карточками: зона наполняется точечно."""
-    with_cards = [r for r in repos if r["full_name"] in cards]
-    without = [r for r in repos if r["full_name"] not in cards]
+    mine = [r for r in repos if not r.get("foreign")]
+    foreign = [r for r in repos if r.get("foreign")]
+    with_cards = [r for r in mine if r["full_name"] in cards]
+    without = [r for r in mine if r["full_name"] not in cards]
+    rows_all = with_cards + foreign
     lines = [
         "# 42-repos — хаб",
         "",
@@ -318,16 +354,27 @@ def hub_markdown(repos, cards):
         f"_Сгенерировано {date.today().isoformat()}. Контракт зоны — [[42-repos/README]], "
         "журнал событий — [[42-repos/log]]._",
         "",
-        f"Карточек: {len(with_cards)} из {len(repos)} репозиториев с доступом "
-        f"(ещё {len(without)} без карточки — это норма: зона наполняется точечно, "
-        "а не пакетно).",
-        "",
     ]
+    if foreign:
+        lines += [
+            f"Карточек: {len(with_cards)} из {len(mine)} своих репозиториев "
+            f"(ещё {len(without)} без карточки — это норма: зона наполняется точечно, "
+            "а не пакетно), плюс {n} в чужих проектах, где я контрибьютор.".format(
+                n=len(foreign)),
+            "",
+        ]
+    else:
+        lines += [
+            f"Карточек: {len(with_cards)} из {len(mine)} репозиториев с доступом "
+            f"(ещё {len(without)} без карточки — это норма: зона наполняется точечно, "
+            "а не пакетно).",
+            "",
+        ]
     got_section = False
     for group, title in (("maintainer", "## Мейнтейнер"), ("contributor", "## Контрибьютор"),
                          ("fork", "## Свои форки"), ("watcher", "## Наблюдаю"),
                          ("archived", "## Архив")):
-        rows = [r for r in with_cards if card_role(r, cards) == group]
+        rows = [r for r in rows_all if card_role(r, cards) == group]
         if not rows:
             continue
         got_section = True
@@ -374,8 +421,9 @@ def main():
              and not is_graduated_fork(r, cards)]
     graduated = [r for r in repos if is_graduated_fork(r, cards)]
     gone = [name for name, (fname, fm) in cards.items()
-            if fm.get("repo") and name not in {r["full_name"] for r in repos}
-            and not (args.no_fork_check and fm.get("role") == "fork")]
+            if fm.get("repo") and name not in {r["full_name"] for r in repos}]
+    foreign, gone = fetch_foreign({n: c for n, c in cards.items() if n in gone},
+                                  {r["full_name"] for r in repos})
 
     if args.json:
         print(json.dumps({
@@ -383,6 +431,7 @@ def main():
             "cards": len(cards), "missing": [r["full_name"] for r in missing],
             "role_drift": [{"repo": r["full_name"], "github": r["role"],
                             "card": c[1].get("role")} for r, c in drift],
+            "foreign_cards": [r["full_name"] for r in foreign],
             "cards_without_repo": gone,
             "by_role": {role: sum(1 for r in repos if r["role"] == role)
                         for role in ("maintainer", "contributor", "fork", "watcher", "archived")},
@@ -413,6 +462,10 @@ def main():
         print(f"карточки без репозитория: {len(gone)}")
         for name in gone:
             print(f"  GONE {name}")
+    if foreign:
+        print(f"карточки чужих проектов: {len(foreign)}")
+        for r in foreign:
+            print(f"  FOREIGN {r['full_name']} ({card_role(r, cards)})")
 
     if args.write:
         if not os.path.isdir(zone):
@@ -432,7 +485,7 @@ def main():
     if args.hub:
         path = os.path.join(zone, "hub.md")
         with open(path, "w", encoding="utf-8") as fh:
-            fh.write(hub_markdown(repos, cards))
+            fh.write(hub_markdown(repos + foreign, cards))
         print(f"хаб перегенерирован: {os.path.relpath(path, vault)}")
 
     if not args.write and not args.hub:
