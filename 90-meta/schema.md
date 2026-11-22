@@ -55,6 +55,7 @@
 | Взаимодействие | `25-interactions/` | `templates/interaction.md` | `date`, `person`, `type` |
 | Ежедневная заметка | `30-journal/` | `templates/daily.md` | `date` |
 | Проект | `40-projects/<slug>/` | `templates/project.md` | `status` |
+| Репозиторий GitHub | `42-repos/<owner>-<repo>.md` | `templates/repo.md` | `repo`, `role`, `status` |
 | Доклад | `40-projects/talks/<slug>/` | `templates/talk-project.md` | `type: talk`, `status` |
 | Аккумулятор идей | `50-drafts/<slug>/` | `templates/draft-ideas.md` | `slug`, `status` |
 | Поездка | `60-travel/trips/` | `templates/trip.md` | `date_start`, `status` |
@@ -76,6 +77,7 @@
 - **`60-travel/poi/`** — транслит-слаги: `cerkov-rozhdestva-bogorodicy-nizhniy-landeh.md`
 - **`20-people/`** — кириллица «Имя Фамилия» (отчество, если известно)
 - **`50-drafts/`, `40-projects/`** — kebab-slug задачи/доклада
+- **`42-repos/`** — `<owner>-<repo>` нижним регистром, `/` и `_` → `-`: `pravets-streamwebrom.md`, `autumn-library-pipeliner.md`; слаг совпадает с именем файла
 - **`01-raw/`** — `YYYY-MM-DD-<slug>.md`
 - **`30-journal/`** — по дате
 - **Лайф-админ** — `providers/<провайдер>.md`, `history/YYYY-MM.md`, `report-YYYY-MM.md`

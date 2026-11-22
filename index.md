@@ -12,6 +12,7 @@
 - 25-interactions — взаимодействия
 - 30-journal — ежедневные заметки
 - 40-projects — проекты (README.md, status.md, log.md; talks/ — каталог докладов)
+- 42-repos — GitHub-репозитории: карточки по ролям, хаб `README.md` (генерируется), журнал `log.md`
 - 50-drafts — статьи/посты/доклады (аккумуляторы: ideas.md, draft.md, slides.md)
 - 60-travel — путешествия: trips/ (поездки), poi/ (база точек интереса)
 - 90-meta — шаблоны (templates/), аккумуляторы, служебное

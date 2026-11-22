@@ -32,6 +32,7 @@
 | 25-interactions | append | взаимодействия |
 | 30-journal | ro | ежедневные заметки |
 | 40-projects | rw | проекты: README/status/log |
+| 42-repos | rw | GitHub-репозитории: карточки по ролям (maintainer/contributor), хаб (генерируется), журнал |
 | 50-drafts | rw | статьи/посты/доклады (аккумуляторы) |
 | 60-travel | rw | путешествия: trips/ (ro), poi/ (rw) |
 | 70-personal | rw | личный лайф-админ: структурированные личные данные подсистемами |
@@ -49,11 +50,11 @@
 
 ### Шаблоны (`90-meta/templates/`)
 
-`person`, `interaction`, `project`, `talk-project`, `draft-ideas`, `poi`, `trip`, `precedent`, `wiki-concept`, `tool-review`, `daily`, а также лайф-админ: `lifeadmin-profile`, `lifeadmin-provider`, `lifeadmin-month`, `lifeadmin-report`.
+`person`, `interaction`, `project`, `talk-project`, `repo`, `draft-ideas`, `poi`, `trip`, `precedent`, `work`, `wiki-concept`, `tool-review`, `daily`, а также лайф-админ: `lifeadmin-profile`, `lifeadmin-provider`, `lifeadmin-month`, `lifeadmin-report`.
 
 ### Скиллы (`skills/`)
 
-Процедуры для ИИ-агентов: [wiki-init](skills/wiki-init/SKILL.md) (первичная настройка), [wiki-ingest](skills/wiki-ingest/SKILL.md) (ингвест), [wiki-verify](skills/wiki-verify/SKILL.md) (проверка утверждений и аудит записанного), [wiki-poi](skills/wiki-poi/SKILL.md) (точки интереса), [wiki-precedent](skills/wiki-precedent/SKILL.md) (прецедентные тексты: цитаты, проверка атрибуции, подбор под слайд), [wiki-people](skills/wiki-people/SKILL.md) (карточки людей), [wiki-transcript-common](skills/wiki-transcript-common/SKILL.md) / [wiki-transcript-private](skills/wiki-transcript-private/SKILL.md) (транскрибация: публичное / личное), [wiki-ocr](skills/wiki-ocr/SKILL.md) (распознавание текста), [wiki-query](skills/wiki-query/SKILL.md) (исследование), [wiki-lint](skills/wiki-lint/SKILL.md) (гигиена). Формат и подключение — в [skills/README.md](skills/README.md).
+Процедуры для ИИ-агентов: [wiki-init](skills/wiki-init/SKILL.md) (первичная настройка), [wiki-ingest](skills/wiki-ingest/SKILL.md) (ингвест), [wiki-verify](skills/wiki-verify/SKILL.md) (проверка утверждений и аудит записанного), [wiki-poi](skills/wiki-poi/SKILL.md) (точки интереса), [wiki-precedent](skills/wiki-precedent/SKILL.md) (прецедентные тексты: цитаты, проверка атрибуции, подбор под слайд), [wiki-people](skills/wiki-people/SKILL.md) (карточки людей), [wiki-repos](skills/wiki-repos/SKILL.md) (GitHub-репозитории: роль из прав, сверка с живым GitHub, журнал PR/релизов), [wiki-transcript-common](skills/wiki-transcript-common/SKILL.md) / [wiki-transcript-private](skills/wiki-transcript-private/SKILL.md) (транскрибация: публичное / личное), [wiki-ocr](skills/wiki-ocr/SKILL.md) (распознавание текста), [wiki-query](skills/wiki-query/SKILL.md) (исследование), [wiki-lint](skills/wiki-lint/SKILL.md) (гигиена). Формат и подключение — в [skills/README.md](skills/README.md).
 
 ## Развёртывание
 

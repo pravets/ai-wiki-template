@@ -16,6 +16,7 @@
 | [wiki-poi](wiki-poi/SKILL.md) | точки интереса: место → координаты → заметка + карта |
 | [wiki-precedent](wiki-precedent/SKILL.md) | прецедентные тексты: цитата → проверка атрибуции → карточка → подбор под слайд |
 | [wiki-people](wiki-people/SKILL.md) | карточки людей: контракт frontmatter, диктовка, ревью-гейт |
+| [wiki-repos](wiki-repos/SKILL.md) | GitHub-репозитории: роль из прав, сверка с живым GitHub, журнал PR/релизов |
 | [wiki-transcript-common](wiki-transcript-common/SKILL.md) | транскрибация неприватного: видео, подкасты, эфиры |
 | [wiki-transcript-private](wiki-transcript-private/SKILL.md) | транскрибация личного: голосовые, приватные встречи |
 | [wiki-ocr](wiki-ocr/SKILL.md) | OCR: текст-слой → tesseract → облачный vision по согласию |
@@ -32,7 +33,7 @@
 
 > **Хелперы** ([`_shared/scripts/`](_shared/scripts/)):
 > - `stt-private <файл> <выходной.txt>` и `stt-public <ссылка|файл> <выходной.txt>` — транскрибация, две ветки по приватности. Вендор-нейтрально: годится любой провайдер с OpenAI-совместимым `POST /v1/audio/transcriptions`; `stt-public` сам скачивает дорожку из ссылки (`yt-dlp` + `ffmpeg`). Про ветки — [wiki-transcript-private](wiki-transcript-private/SKILL.md) и [wiki-transcript-common](wiki-transcript-common/SKILL.md).
-> - `split_transcript.py` — разрез однострочного транскрипта; `verify_terms.py` — проверка термина по исходнику; `pdf_layer_check.py` — постраничный вердикт о текстовом слое PDF (`text-layer` / `needs-ocr` / `ambiguous` — нужен poppler, Python-зависимостей нет); `precedent_check.py` — валидация банка цитат `15-precedent/`: обязательные поля, `attribution`, словарь тем/приёмов, дубли по нормализованному тексту.
+> - `split_transcript.py` — разрез однострочного транскрипта; `verify_terms.py` — проверка термина по исходнику; `pdf_layer_check.py` — постраничный вердикт о текстовом слое PDF (`text-layer` / `needs-ocr` / `ambiguous` — нужен poppler, Python-зависимостей нет); `precedent_check.py` — валидация банка цитат `15-precedent/`: обязательные поля, `attribution`, словарь тем/приёмов, дубли по нормализованному тексту; `gh_repos_sync.py` — сверка зоны `42-repos` с живым GitHub: роль из прав, недостающие карточки, дрейф роли, генерация хаба (нужен `gh` CLI).
 
 > **Самопроверка хелпера:** `python3 _shared/scripts/tests/self_test.py` — собирает фикстуры (цифровой PDF, скан, смешанный) и проверяет вердикты, точность слоя и мост «растеризация → tesseract». Требуется poppler; Pillow и tesseract необязательны (их отсутствие даёт пропуск, а не провал).
 
