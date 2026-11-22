@@ -342,7 +342,8 @@ def main():
     drift = [(r, cards[r["full_name"]]) for r in repos
              if r["full_name"] in cards and cards[r["full_name"]][1].get("role") not in (r["role"], None, "")]
     gone = [name for name, (fname, fm) in cards.items()
-            if fm.get("repo") and name not in {r["full_name"] for r in repos}]
+            if fm.get("repo") and name not in {r["full_name"] for r in repos}
+            and not (args.no_fork_check and fm.get("role") == "fork")]
 
     if args.json:
         print(json.dumps({
