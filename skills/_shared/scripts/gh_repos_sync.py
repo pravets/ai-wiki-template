@@ -281,6 +281,27 @@ def build_card(repo, stale_days):
     )
 
 
+def card_role(repo, cards):
+    """Роль из карточки, если она есть: суждение владельца старше вывода из API."""
+    card = cards.get(repo["full_name"])
+    if card and card[1].get("role"):
+        return card[1]["role"]
+    return repo["role"]
+
+
+def is_graduated_fork(repo, cards):
+    """Форк, обогнавший апстрим и объявленный своим проектом.
+
+    GitHub навсегда считает такой репозиторий форком, но если upstream мёртв, а работа
+    идёт в своей ветке, роль `fork` врёт: это самостоятельный проект с чужой историей.
+    Признак — карточка говорит `maintainer`, репозиторий форк и есть коммиты сверх
+    родителя. Такое расхождение — решение владельца, а не дрейф.
+    """
+    card = cards.get(repo["full_name"])
+    return (repo.get("fork") and repo.get("ahead", 0) > 0
+            and bool(card) and card[1].get("role") == "maintainer")
+
+
 def hub_markdown(repos, cards):
     """Хаб показывает только репозитории с карточками: зона наполняется точечно."""
     with_cards = [r for r in repos if r["full_name"] in cards]
@@ -304,7 +325,7 @@ def hub_markdown(repos, cards):
     for group, title in (("maintainer", "## Мейнтейнер"), ("contributor", "## Контрибьютор"),
                          ("fork", "## Свои форки"), ("watcher", "## Наблюдаю"),
                          ("archived", "## Архив")):
-        rows = [r for r in with_cards if r["role"] == group]
+        rows = [r for r in with_cards if card_role(r, cards) == group]
         if not rows:
             continue
         got_section = True
@@ -347,7 +368,9 @@ def main():
     fresh = [r for r in missing if args.all or not args.max_age
              or (r["pushed_at"] and _days_since(r["pushed_at"]) <= args.max_age)]
     drift = [(r, cards[r["full_name"]]) for r in repos
-             if r["full_name"] in cards and cards[r["full_name"]][1].get("role") not in (r["role"], None, "")]
+             if r["full_name"] in cards and cards[r["full_name"]][1].get("role") not in (r["role"], None, "")
+             and not is_graduated_fork(r, cards)]
+    graduated = [r for r in repos if is_graduated_fork(r, cards)]
     gone = [name for name, (fname, fm) in cards.items()
             if fm.get("repo") and name not in {r["full_name"] for r in repos}
             and not (args.no_fork_check and fm.get("role") == "fork")]
@@ -381,6 +404,9 @@ def main():
         print(f"роль разошлась с GitHub: {len(drift)}")
         for r, c in drift:
             print(f"  DRIFT {r['full_name']}: карточка {c[1].get('role')}, GitHub {r['role']}")
+    for r in graduated:
+        print(f"  FORK→PROJECT {r['full_name']}: форк, +{r['ahead']} коммитов сверх "
+              f"{r['parent']}, в карточке maintainer")
     if gone:
         print(f"карточки без репозитория: {len(gone)}")
         for name in gone:
