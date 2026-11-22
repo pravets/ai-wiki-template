@@ -68,7 +68,7 @@ def gh(args):
     return out.stdout
 
 
-def fetch_repos(include_forks, check_forks=True):
+def fetch_repos(include_forks, check_forks=True, keep_forks=()):
     repos = []
     page = 1
     me = gh(["api", "user", "--jq", ".login"]).strip()
@@ -103,10 +103,12 @@ def fetch_repos(include_forks, check_forks=True):
             if parent:
                 ahead = fork_ahead(r["full_name"], parent, parent_branch,
                                    r.get("default_branch") or "main")
-            if ahead == 0 and not include_forks:
+            # Форк с карточкой `maintainer` не выбрасываем даже при ahead = 0 на default-ветке:
+            # своя линия может жить в другой ветке (проверяется отдельно в main()).
+            if ahead == 0 and not include_forks and r["full_name"] not in keep_forks:
                 continue
             role = "fork" if ahead else "watcher"
-        elif r.get("fork") and not include_forks:
+        elif r.get("fork") and not include_forks and r["full_name"] not in keep_forks:
             continue
         result.append({
             "full_name": r["full_name"],
@@ -130,6 +132,7 @@ def fetch_repos(include_forks, check_forks=True):
             "topics": r.get("topics") or [],
             "license": ((r.get("license") or {}).get("spdx_id") or ""),
             "parent": parent,
+            "parent_branch": parent_branch,
         })
     return me, result
 
@@ -178,6 +181,54 @@ def fork_ahead(full_name, parent_full_name, parent_branch, my_branch):
         except ValueError:
             continue
     return 0
+
+
+def own_branch_ahead(full_name, parent_full_name, parent_branch):
+    """Ищет свою работу в ветках форка, когда ветка по умолчанию — чистое зеркало.
+
+    Своя линия не обязана жить в ветке по умолчанию: у форка легко встретить
+    `master` = апстрим один-в-один, а работу — в `develop`. Сравнение только по
+    default-ветке даёт `ahead_by = 0`, и проект выглядит зеркалом. Поэтому для
+    карточек со ролью maintainer ищем ветки, которых нет в апстриме, и сравниваем
+    их (дешево: только для репозиториев с карточкой, а не для всех форков).
+    Возвращает (ветка, ahead) по самой продвинутой своей ветке или None.
+    """
+    if not parent_full_name:
+        return None
+    out = subprocess.run(["gh", "api", f"repos/{full_name}/branches?per_page=100",
+                          "--jq", ".[].name"], capture_output=True, text=True, timeout=60)
+    if out.returncode != 0:
+        return None
+    mine = [b.strip() for b in out.stdout.splitlines() if b.strip()]
+    out = subprocess.run(["gh", "api", f"repos/{parent_full_name}/branches?per_page=100",
+                          "--jq", ".[].name"], capture_output=True, text=True, timeout=60)
+    parent_branches = set(b.strip() for b in out.stdout.splitlines() if b.strip())
+    if not mine or not parent_branches:
+        return None
+    own = [b for b in mine if b not in parent_branches]
+    if not own:
+        return None
+    # В пути compare база задаётся как `owner:branch`, полное имя репозитория не принимается.
+    parent_owner = parent_full_name.split("/")[0]
+    my_owner = full_name.split("/")[0]
+    best = None
+    for branch in own[:8]:
+        try:
+            cmp = subprocess.run(
+                ["gh", "api", f"repos/{full_name}/compare/{parent_owner}:{parent_branch}"
+                 f"...{my_owner}:{branch}", "--jq", ".ahead_by"],
+                capture_output=True, text=True, timeout=60)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if cmp.returncode != 0:
+            continue
+        try:
+            ahead = int(cmp.stdout.strip() or 0)
+        except ValueError:
+            continue
+        if ahead and (best is None or ahead > best[1]):
+            best = (branch, ahead)
+    return best
 
 
 def parse_card(text):
@@ -424,8 +475,29 @@ def main():
 
     vault = find_vault(args.vault)
     zone = os.path.join(vault, "42-repos")
-    me, repos = fetch_repos(args.forks, check_forks=not args.no_fork_check)
     cards = existing_cards(vault)
+    # Форки с карточкой maintainer тянем всегда: своя линия может жить не в default-ветке.
+    keep_forks = {n for n, (f, fm) in cards.items()
+                  if fm.get("role") == "maintainer" and fm.get("upstream")}
+    me, repos = fetch_repos(args.forks, check_forks=not args.no_fork_check,
+                            keep_forks=keep_forks)
+
+    # Своя линия может жить не в ветке по умолчанию (master = апстрим, работа в develop).
+    # Проверяем только репозитории с карточками — их единицы, а не все форки.
+    for r in repos:
+        if not r.get("fork") or r.get("ahead"):
+            continue
+        card = cards.get(r["full_name"])
+        if not card or card[1].get("role") != "maintainer":
+            continue
+        parent = r.get("parent") or ""
+        parent_branch = r.get("parent_branch") or "master"
+        if not parent:
+            parent, parent_branch = fork_info(r["full_name"])
+        found = own_branch_ahead(r["full_name"], parent, parent_branch)
+        if found:
+            r["own_branch"], r["ahead"] = found[0], found[1]
+            r["parent"] = r["parent"] or parent
 
     missing = [r for r in repos if r["full_name"] not in cards]
     fresh = [r for r in missing if args.all or not args.max_age
@@ -470,7 +542,8 @@ def main():
         for r, c in drift:
             print(f"  DRIFT {r['full_name']}: карточка {c[1].get('role')}, GitHub {r['role']}")
     for r in graduated:
-        print(f"  FORK→PROJECT {r['full_name']}: форк, +{r['ahead']} коммитов сверх "
+        where = f" на ветке {r['own_branch']}" if r.get("own_branch") else ""
+        print(f"  FORK→PROJECT {r['full_name']}: форк, +{r['ahead']} коммитов{where} сверх "
               f"{r['parent']}, в карточке maintainer")
     if gone:
         print(f"карточки без репозитория: {len(gone)}")
