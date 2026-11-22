@@ -101,7 +101,7 @@ def fetch_repos(include_forks, check_forks=True):
             if not parent:
                 parent, parent_branch = fork_info(r["full_name"])
             if parent:
-                ahead = fork_ahead(r["full_name"], parent_branch,
+                ahead = fork_ahead(r["full_name"], parent, parent_branch,
                                    r.get("default_branch") or "main")
             if ahead == 0 and not include_forks:
                 continue
@@ -148,12 +148,25 @@ def fork_info(full_name):
     return (parts[0] if parts else ""), (parts[1] if len(parts) > 1 else "main")
 
 
-def fork_ahead(full_name, parent_branch, my_branch):
-    """Сколько моих коммитов в форке сверх upstream. 0 — зеркало, не проект."""
-    for base in dict.fromkeys([parent_branch, "main", "master"]):
+def fork_ahead(full_name, parent_full_name, parent_branch, my_branch):
+    """Сколько моих коммитов в форке сверх upstream. 0 — зеркало, не проект.
+
+    Ветки обязательно квалифицируются владельцем (`owner:branch`): неквалифицированный
+    `master` в форке резолвится в *свой* master, и сравнение даёт `ahead_by = 0` у любого
+    форка — так «свой проект» молча превращался в зеркало.
+    """
+    parent_owner = parent_full_name.split("/")[0] if "/" in parent_full_name else ""
+    my_owner = full_name.split("/")[0] if "/" in full_name else ""
+    candidates = []
+    if parent_owner:
+        candidates.append(f"{parent_owner}:{parent_branch}...{my_owner}:{my_branch}")
+        candidates.append(f"{parent_owner}:{parent_branch}...{my_owner}:master")
+        candidates.append(f"{parent_owner}:{parent_branch}...{my_owner}:main")
+    candidates += [f"{b}...{my_branch}" for b in dict.fromkeys([parent_branch, "main", "master"])]
+    for base in candidates:
         try:
             out = subprocess.run(
-                ["gh", "api", f"repos/{full_name}/compare/{base}...{my_branch}",
+                ["gh", "api", f"repos/{full_name}/compare/{base}",
                  "--jq", ".ahead_by"],
                 capture_output=True, text=True, timeout=60)
         except (OSError, subprocess.SubprocessError):
@@ -325,12 +338,13 @@ def card_role(repo, cards):
 def is_graduated_fork(repo, cards):
     """Форк, живущий своей линией, объявленный владельцем своим проектом.
 
-    GitHub навсегда считает такой репозиторий форком, но если своя работа доминирует —
-    апстрим заброшен или не принимает изменения, — роль `fork` врёт: это
-    мейнтейнерство над собственной линией, где от родителя остались история коммитов
-    и лицензионная атрибуция. Признак — карточка говорит `maintainer`, репозиторий
-    форк и есть коммиты сверх родителя. Такое расхождение — решение владельца,
-    а не дрейф.
+    GitHub навсегда считает такой репозиторий форком, но если своя работа доминирует,
+    роль `fork` врёт: это мейнтейнерство над собственной линией, где от родителя
+    остались история коммитов и лицензионная атрибуция. Причины равнозначны: апстрим
+    заброшен, апстрим не принимает изменения, владелец сам не предлагает их в апстрим
+    (нужен результат сейчас или апстрим — зеркало другой платформы, где PR не читают).
+    Признак — карточка говорит `maintainer`, репозиторий форк и есть коммиты сверх
+    родителя. Такое расхождение — решение владельца, а не дрейф.
     """
     card = cards.get(repo["full_name"])
     return (repo.get("fork") and repo.get("ahead", 0) > 0
