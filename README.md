@@ -50,7 +50,31 @@
 
 ### Шаблоны (`90-meta/templates/`)
 
-`person`, `interaction`, `project`, `talk-project`, `repo`, `draft-ideas`, `poi`, `trip`, `precedent`, `work`, `wiki-concept`, `tool-review`, `daily`, а также лайф-админ: `lifeadmin-profile`, `lifeadmin-provider`, `lifeadmin-month`, `lifeadmin-report`.
+`person`, `interaction`, `project`, `talk-project`, `repo`, `draft-ideas`, `poi`, `trip`, `precedent`, `wiki-concept`, `tool-review`, `daily`, а также лайф-админ: `lifeadmin-profile`, `lifeadmin-provider`, `lifeadmin-month`, `lifeadmin-report`.
+
+### Инструменты
+
+Скрипты — `90-meta/scripts/`, запуск через `make`:
+
+| Команда | Что делает |
+|---|---|
+| `make index` | перегенерировать `index.md` из frontmatter (файл не правится руками) |
+| `make search` | пересобрать поисковый индекс BM25 (SQLite FTS5) |
+| `make search-full` | пересобрать индекс с нуля |
+| `make hub` | перегенерировать `42-repos/hub.md` (нужен `gh` CLI с токеном) |
+| `make test` | 11 тестов поиска на одноразовых vault'ах |
+| `make check-paths` | проверить, что пути из документации существуют |
+| `make check-hook` | проверить, что git-хук подключён |
+
+Включить хук один раз после клона:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Зависимости: Python 3.8+ и `snowballstemmer` (без него сборка индекса отказывается
+работать — иначе русская морфология молча ломается). Индекс (`.wiki-index/`) —
+производный артефакт, в git не попадает.
 
 ### Скиллы (`skills/`)
 

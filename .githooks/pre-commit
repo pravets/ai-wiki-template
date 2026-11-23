@@ -1,0 +1,42 @@
+#!/bin/sh
+# Гейт шаблона: index.md собран из frontmatter, поисковый индекс не отстал.
+# Включается один раз: git config core.hooksPath .githooks
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+
+# Интерпретатор ищем сами: python3 в PATH на Windows может быть заглушкой
+# Microsoft Store (падает с os error 1920). Стеммер нужен только поиску.
+PY=""
+PYSTEM=""
+for cand in "${WIKI_PY:-}" python3 python; do
+    [ -n "$cand" ] || continue
+    "$cand" -c 'import sys' >/dev/null 2>&1 || continue
+    [ -n "$PY" ] || PY=$cand
+    if [ -z "$PYSTEM" ] && "$cand" -c 'import snowballstemmer' >/dev/null 2>&1; then
+        PYSTEM=$cand
+    fi
+done
+if [ -z "$PY" ]; then
+    echo "pre-commit: не нашёл рабочий python — нужен python3 или python в PATH" >&2
+    exit 1
+fi
+
+ANYMD=$(git diff --cached --name-only --diff-filter=ACMRD | grep -E '\.md$' || true)
+if [ -z "$ANYMD" ]; then
+    exit 0
+fi
+
+# 1. Поисковый индекс (BM25/FTS5): производный артефакт, коммит НЕ блокирует.
+#    Без стеммера rebuild сам отказывается собирать — иначе русская морфология
+#    молча ломается, и поиск находит только латиницу.
+if [ -n "$PYSTEM" ]; then
+    "$PYSTEM" 90-meta/scripts/wiki_search.py index >/dev/null \
+        || echo "pre-commit: поисковый индекс не пересобран — запусти: make search" >&2
+else
+    echo "pre-commit: нет python со snowballstemmer — индекс устарел, запусти: make search" >&2
+fi
+
+# 2. index.md — генерируемый файл: правка руками не выживет, дрейф не копится.
+"$PY" 90-meta/scripts/gen_index.py --write >/dev/null
+git add index.md
