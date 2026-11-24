@@ -39,6 +39,7 @@
 | 20-people | rw | люди: карточки юзера + ИИ по диктовке (frontmatter: контакты, ДР); существующее не удалять |
 | 25-interactions | append | взаимодействия: юзер пишет факты; агент добавляет по диктовке |
 | 30-journal | ro | ежедневные заметки — только юзер |
+| 35-courses | rw | курсы: карточка курса, конспекты модулей, инсайты с «как применю»; зрелое промоутится в 10-wiki |
 | 40-projects | rw | проекты: README.md (ro), status.md (агент), log.md (append) |
 | 42-repos | rw | GitHub-репозитории: карточки (роль `maintainer`/`contributor` из прав), хаб `README.md` (генерируется), журнал `log.md` (append) |
 | 50-drafts | rw | статьи/посты/доклады: ideas.md (append), draft.md, slides.md |
@@ -80,6 +81,7 @@
 - распознавание текста со скана/скриншота/PDF → [skills/wiki-ocr](skills/wiki-ocr/SKILL.md)
 - вопрос по базе (read-only) → [skills/wiki-query](skills/wiki-query/SKILL.md)
 - гигиена базы → [skills/wiki-lint](skills/wiki-lint/SKILL.md)
+- курсы (карточка → модуль → инсайт → промоушен) → [35-courses/README.md](35-courses/README.md) + [skills/wiki-courses](skills/wiki-courses/SKILL.md)
 - личный лайф-админ (структурированные данные подсистемами) → [70-personal/README.md](70-personal/README.md) + `templates/lifeadmin-*.md`
 
 ## Workflows
@@ -99,6 +101,17 @@
 ### Доклады
 `50-drafts/<доклад>/outline.md` (структура, тезисы, тайминг) + `slides.md` (Slidev-формат). Слайды рендерятся вне vault.
 
+### Курсы
+Зона `35-courses`, контракт — [35-courses/README.md](35-courses/README.md), процедура — [skills/wiki-courses](skills/wiki-courses/SKILL.md).
+1. Старт курса — папка `<slug>/` и карточка `course.md` (`type: course`, `status: active`, `started`).
+2. Модуль пройден — страница `mNN-<тема>.md` (`type: course-module`): TL;DR, ключевые знания с таймкодами, вопросы, «что попробовать». Конспект — не пересказ лекции.
+3. Поймал инсайт — отдельная страница `insights/NN-<слаг>.md` (`type: insight`) сразу с разделами «Суть / Как применю / Проверка», `status: to-apply`.
+4. Применение — `applied`, либо `dropped` с причиной в теле.
+5. Промоушен — знание созрело: страница в `10-wiki` со ссылкой на модуль, у инсайта `status: promoted` и `promoted_to`. Ревью-гейт: страница показывается владельцу до коммита.
+6. Финиш — `status: done`, `finished`, итог в карточке.
+
+Хаб `35-courses/hub.md` и секции курсов в `index.md` генерируются `gen_index.py` — руками не править.
+
 ### Линт
 По запросу или по расписанию: сироты (нет входящих ссылок), противоречия, устаревшие утверждения, пробелы, конфликт-файлы Syncthing.
 
@@ -106,7 +119,7 @@
 Вопрос по содержимому — сначала BM25-поиск (в vault'е `90-meta/scripts/wiki_search.py`: SQLite FTS5 + встроенная `bm25()`, стемминг ru в документе и в запросе), а не grep и не чтение `index.md` целиком. grep/ripgrep — вторая линия: точная строка, регулярка, имя файла. Сырьё (транскрипты) — отдельный корпус, по умолчанию в выдачу не попадает. Перед новой страницей — поиск похожих: дубль заводится только после него. Индекс — производный артефакт (в `.gitignore`), пересобирается хуком/`make search`; без стеммера сборка отказывается работать, иначе русская морфология ломается молча. Процедура — скилл `wiki-query`.
 
 ### Репозитории GitHub
-1. Сверка с живым GitHub: `python3 skills/_shared/scripts/gh_repos_sync.py` (в vault'е — `90-meta/scripts/gh_repos_sync.py`) — что нового, где роль в карточке разошлась с правами, какие карточки осиротели.
+1. Сверка с живым GitHub: `python3 90-meta/scripts/gh_repos_sync.py` — что нового, где роль в карточке разошлась с правами, какие карточки осиротели.
 2. Новая карточка — `--write`, хаб — `--hub`. **Роль берётся из прав GitHub**, не из головы; форк проверяется через `compare` (своя работа или зеркало upstream).
 3. Событие (PR, релиз, смена роли) — строка в `42-repos/log.md`, в конец, по дате.
 4. Процедура — скилл `wiki-repos`, контракт зоны — `42-repos/README.md`.

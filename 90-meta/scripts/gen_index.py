@@ -16,6 +16,7 @@ import sys
 
 VAULT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 INDEX = os.path.join(VAULT, "index.md")
+HUB = os.path.join(VAULT, "35-courses", "hub.md")
 LINE_MAX = 120
 NAME_MAX = 90
 
@@ -32,6 +33,7 @@ ZONES = [
     ("20-people", "люди: карточки"),
     ("25-interactions", "взаимодействия"),
     ("30-journal", "ежедневные заметки"),
+    ("35-courses", "курсы: карточка, конспекты модулей, инсайты"),
     ("40-projects", "проекты и доклады"),
     ("42-repos", "GitHub-репозитории: мейнтейнер/контрибьютор"),
     ("50-drafts", "статьи/посты/доклады (аккумуляторы)"),
@@ -50,7 +52,15 @@ TYPE_TITLES = {
     "talk": "Доклады и конспекты",
     "company": "Компании",
     "style-guide": "Стиль и редактура",
+    "course": "Курсы",
+    "course-module": "Конспекты модулей",
+    "insight": "Инсайты",
 }
+
+# Зона курсов: порядок статусов курса в индексе и хабе.
+COURSE_STATUS = {"active": 0, "paused": 1, "planned": 2, "done": 3, "dropped": 4}
+INSIGHT_STATUS = {"to-apply": 0, "applied": 1, "promoted": 2, "dropped": 3}
+AREA_ORDER = {"work": 0, "1c": 1, "personal": 2, "study": 3}
 
 
 def frontmatter(text):
@@ -105,6 +115,12 @@ def collect():
                 "updated": fm.get("updated", ""),
                 "region": fm.get("region", ""),
                 "role": fm.get("role", ""),
+                "status": fm.get("status", ""),
+                "course": fm.get("course", ""),
+                "part": fm.get("part", ""),
+                "area": fm.get("area", ""),
+                "started": fm.get("started", ""),
+                "promoted_to": fm.get("promoted_to", ""),
             })
     return pages
 
@@ -118,6 +134,114 @@ def fmt(entry):
     if len(name) > room:
         name = name[:max(20, room - 1)].rstrip() + "…"
     return prefix + name
+
+
+def course_slug(rel):
+    """35-courses/<slug>/... -> <slug>; страница не в папке курса -> ''."""
+    parts = rel.split("/")
+    return parts[1] if len(parts) > 2 else ""
+
+
+def course_lines(crs):
+    """Секция курсов: по курсу — карточка, модули по номеру, инсайты внутри."""
+    by_course = {}
+    for p in crs:
+        slug = course_slug(p["rel"])
+        if slug:
+            by_course.setdefault(slug, []).append(p)
+
+    out = []
+    order = sorted(by_course.items(),
+                   key=lambda kv: (COURSE_STATUS.get(card_status(kv[1]), 9), kv[0]))
+    for slug, items in order:
+        card = next((p for p in items if p["type"] == "course"), None)
+        mods = sorted((p for p in items if p["type"] == "course-module"),
+                      key=lambda p: (p["part"], p["slug"]))
+        ins = sorted((p for p in items if p["type"] == "insight"),
+                     key=lambda p: (INSIGHT_STATUS.get(p["status"], 9),
+                                    AREA_ORDER.get(p["area"], 9), p["slug"]))
+        open_ins = sum(1 for p in ins if p["status"] == "to-apply")
+        head = f"### {slug}"
+        meta = []
+        st = card_status(items)
+        if st:
+            meta.append(st)
+        meta.append(f"модулей {len(mods)}")
+        if ins:
+            meta.append(f"инсайтов {len(ins)}, к применению {open_ins}")
+        if meta:
+            head += f" — {', '.join(meta)}"
+        out += [head, ""]
+        if card:
+            name = card["name"].replace("|", "/").strip()
+            out.append(f"- [[{card['slug']}|карточка курса]] — {name}")
+        out += [fmt(p) for p in mods]
+        out += [f"{fmt(p)} ({p['area'] or 'область не указана'}: {p['status']})" for p in ins]
+        out.append("")
+
+    pending = [p for p in crs if p["type"] == "insight" and p["status"] == "to-apply"]
+    if pending:
+        out += ["### Инсайты к применению", ""]
+        for p in sorted(pending, key=lambda p: (AREA_ORDER.get(p["area"], 9), p["slug"])):
+            out.append(f"{fmt(p)} — {p['area'] or 'область не указана'}")
+        out.append("")
+    return out
+
+
+def card_status(items):
+    card = next((p for p in items if p["type"] == "course"), None)
+    return card["status"] if card else ""
+
+
+def build_hub(pages):
+    """35-courses/hub.md: таблица курсов и очередь инсайтов. Генерируется."""
+    crs = [p for p in pages if p["rel"].startswith("35-courses/")]
+    by_course = {}
+    for p in crs:
+        slug = course_slug(p["rel"])
+        if slug:
+            by_course.setdefault(slug, []).append(p)
+
+    out = ["# Курсы — хаб", "",
+           "**Файл генерируется** `90-meta/scripts/gen_index.py` (`make index`). "
+           "Руками не править. Контракт зоны — [[35-courses/README]].", ""]
+
+    if not by_course:
+        out += ["Курсов пока нет. Заведи карточку по шаблону `90-meta/templates/course.md`.", ""]
+        return "\n".join(out)
+
+    out += ["## Курсы", "",
+            "| Курс | Статус | Модулей | Инсайтов | К применению | Начат |",
+            "|---|---|---|---|---|---|"]
+    order = sorted(by_course.items(),
+                   key=lambda kv: (COURSE_STATUS.get(card_status(kv[1]), 9), kv[0]))
+    for slug, items in order:
+        card = next((p for p in items if p["type"] == "course"), None)
+        mods = [p for p in items if p["type"] == "course-module"]
+        ins = [p for p in items if p["type"] == "insight"]
+        pending = sum(1 for p in ins if p["status"] == "to-apply")
+        name = f"[[35-courses/{slug}/course|{slug}]]" if card else slug
+        started = card["started"] if card else ""
+        out.append(f"| {name} | {card_status(items) or '—'} | {len(mods)} | {len(ins)} | "
+                   f"{pending} | {started or '—'} |")
+    out.append("")
+
+    pending = [p for p in crs if p["type"] == "insight" and p["status"] == "to-apply"]
+    out += ["## Инсайты к применению", ""]
+    if pending:
+        out += ["| Инсайт | Область | Курс | Создан |", "|---|---|---|---|"]
+        for p in sorted(pending, key=lambda p: (AREA_ORDER.get(p["area"], 9), p["slug"])):
+            rel = p["rel"]
+            course = course_slug(rel)
+            out.append(f"| [[{p['slug']}|{p['stem']}]] | {p['area'] or '—'} | "
+                       f"[[35-courses/{course}/course|{course}]] | {p['updated'] or '—'} |")
+    else:
+        out.append("Очередь пуста.")
+    out += ["", "## Что дальше", "",
+            "Порядок: очередь `to-apply` → применить и закрыть (`applied`) → созрело до "
+            "переиспользуемого → промоушен в `10-wiki` (`promoted`). Модули без инсайтов — "
+            "кандидаты на перечитывание.", ""]
+    return "\n".join(out)
 
 
 def build(pages):
@@ -165,6 +289,12 @@ def build(pages):
             out += [f"### {TYPE_TITLES.get(t, t)} ({len(items)})", ""]
             out += [fmt(p) for p in sorted(items, key=lambda p: p["stem"])]
             out.append("")
+
+    crs = by_zone.get("35-courses", [])
+    if crs:
+        out += ["", "## 35-courses — курсы", "",
+                "Хаб: [[35-courses/hub]]. Контракт: [[35-courses/README]].", ""]
+        out += course_lines(crs)
 
     prec_works = by_zone.get("15-precedent", [])
     works = [p for p in prec_works if p["rel"].startswith("15-precedent/works/")]
@@ -238,20 +368,34 @@ def main():
     ap.add_argument("--diff", action="store_true")
     args = ap.parse_args()
 
-    new = build(collect())
+    pages = collect()
+    new = build(pages)
+    new_hub = build_hub(pages)
     old = open(INDEX, encoding="utf-8").read() if os.path.exists(INDEX) else ""
+    old_hub = open(HUB, encoding="utf-8").read() if os.path.exists(HUB) else ""
 
     if args.check:
+        bad = False
         if new != old:
             print(f"index.md расходится с frontmatter ({len(old)} -> {len(new)} байт). "
                   f"Запусти gen_index.py --write")
-            return 1
-        print("index.md в порядке")
-        return 0
+            bad = True
+        if os.path.isdir(os.path.join(VAULT, "35-courses")) and new_hub != old_hub:
+            print(f"35-courses/hub.md расходится с frontmatter "
+                  f"({len(old_hub)} -> {len(new_hub)} байт). Запусти gen_index.py --write")
+            bad = True
+        if not bad:
+            print("index.md в порядке")
+        return 1 if bad else 0
     if args.write:
         with open(INDEX, "w", encoding="utf-8") as fh:
             fh.write(new)
-        print(f"index.md перезаписан: {len(old)} -> {len(new)} байт")
+        msg = f"index.md перезаписан: {len(old)} -> {len(new)} байт"
+        if os.path.isdir(os.path.dirname(HUB)):
+            with open(HUB, "w", encoding="utf-8") as fh:
+                fh.write(new_hub)
+            msg += f"; hub.md: {len(old_hub)} -> {len(new_hub)} байт"
+        print(msg)
         return 0
     import difflib
     sys.stdout.writelines(difflib.unified_diff(
