@@ -29,5 +29,8 @@
 
 ## Последние изменения
 
+- 2026-01-05 [[90-meta/accumulators|accumulators]]
+- 2026-01-05 [[70-personal/example/report-2026-01|report-2026-01]]
 - 2026-01-05 [[70-personal/example/providers/provider-a|provider-a]]
 - 2026-01-05 [[70-personal/example/profile|profile]]
+- 2026-01-05 [[70-personal/example/history/2026-01|2026-01]]

@@ -58,6 +58,9 @@
 
 | Команда | Что делает |
 |---|---|
+| `make lint` | отчёт линта контракта frontmatter с нарушителями |
+| `make gate` | строгий линт (только новые нарушения сверх `90-meta/lint-baseline.json`) + сверка `index.md` |
+| `make log` | ротация `log.md`: записи старше хвоста 100 КБ → `90-meta/log/<год>.md` |
 | `make index` | перегенерировать `index.md` из frontmatter (файл не правится руками) |
 | `make search` | пересобрать поисковый индекс BM25 (SQLite FTS5) |
 | `make search-full` | пересобрать индекс с нуля |

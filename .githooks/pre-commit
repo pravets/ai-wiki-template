@@ -27,7 +27,21 @@ if [ -z "$ANYMD" ]; then
     exit 0
 fi
 
-# 1. Поисковый индекс (BM25/FTS5): производный артефакт, коммит НЕ блокирует.
+# Только заметки вики-слоя и только добавленные/изменённые.
+STAGED=$(git diff --cached --name-only --diff-filter=ACM \
+    | grep -E '\.md$' \
+    | grep -vE '^(index\.md|log\.md|AGENTS\.md)$' \
+    | grep -vE '^(01-raw|30-journal|00-inbox|90-meta/log)/' \
+    || true)
+
+# 1. Новые нарушения frontmatter на изменённых страницах — блок.
+#    Известный бэклог в 90-meta/lint-baseline.json не мешает.
+if [ -n "$STAGED" ]; then
+    printf '%s\n' "$STAGED" | "$PY" 90-meta/scripts/lint_frontmatter.py \
+        --changed - --strict --baseline 90-meta/lint-baseline.json
+fi
+
+# 2. Поисковый индекс (BM25/FTS5): производный артефакт, коммит НЕ блокирует.
 #    Без стеммера rebuild сам отказывается собирать — иначе русская морфология
 #    молча ломается, и поиск находит только латиницу.
 if [ -n "$PYSTEM" ]; then
@@ -37,6 +51,6 @@ else
     echo "pre-commit: нет python со snowballstemmer — индекс устарел, запусти: make search" >&2
 fi
 
-# 2. index.md — генерируемый файл: правка руками не выживет, дрейф не копится.
+# 3. index.md — генерируемый файл: правка руками не выживет, дрейф не копится.
 "$PY" 90-meta/scripts/gen_index.py --write >/dev/null
 git add index.md
