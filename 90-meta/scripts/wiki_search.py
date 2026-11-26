@@ -43,7 +43,7 @@ WIKI_DIRS = ("10-wiki", "15-precedent", "20-people", "25-interactions", "40-proj
              "42-repos", "50-drafts", "60-travel", "70-personal", "90-meta")
 RAW_DIRS = ("01-raw",)
 CHAT_DIRS = ("05-chats",)
-SKIP_DIRS = ("90-meta/templates", "60-travel/trips", "30-journal", "00-inbox",
+SKIP_DIRS = ("90-meta/templates", "90-meta/log", "60-travel/trips", "30-journal", "00-inbox",
              ".git", ".obsidian", ".trash", ".wiki-index")
 SKIP_NAMES = ("index.md", "AGENTS.md", "README.md", "log.md", "status.md")
 

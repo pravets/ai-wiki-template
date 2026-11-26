@@ -1,6 +1,8 @@
 # Index
 
-Каталог vault. **Файл генерируется** `90-meta/scripts/gen_index.py` (`make index`). Руками не править: правка будет перезаписана, описания берутся из `name` заметок.
+Каталог vault. **Файл генерируется** `90-meta/scripts/gen_index.py` (`make index`).
+
+Руками не править: правка будет перезаписана, описания берутся из `name` заметок.
 
 Журнал операций — [[log]].
 
@@ -25,6 +27,22 @@
 ## 15-precedent — банк цитат
 
 Хаб с выборками: [[15-precedent/hub]]. Контракт: [[15-precedent/README]]. Словарь тем: [[15-precedent/themes]].
+
+
+## 70-personal — личный лайф-админ (4)
+
+### example (2)
+
+- [[70-personal/example/profile|profile]] — Пример подсистемы — профиль предпочтений
+- [[70-personal/example/report-2026-01|report-2026-01]] — Пример отчёта — 2026-01
+
+### example/history (1)
+
+- [[70-personal/example/history/2026-01|2026-01]] — Пример периода — 2026-01
+
+### example/providers (1)
+
+- [[70-personal/example/providers/provider-a|provider-a]] — Провайдер A (пример)
 
 
 ## Последние изменения
