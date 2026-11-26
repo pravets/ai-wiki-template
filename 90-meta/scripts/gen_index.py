@@ -345,8 +345,13 @@ def build(pages):
 
     chats = by_zone.get("05-chats", [])
     if chats:
-        out += ["", f"## 05-chats — дампы чатов ({len(chats)})", ""]
-        out += [f"- [[{p['slug']}]] — {p['name']}" for p in sorted(chats, key=lambda p: p["stem"], reverse=True)[:30]]
+        # Каталог показывает только последние 30 дампов: 188 строк утопили бы индекс,
+        # полный список читается поиском (`wiki_search.py` + корпус `chats`).
+        limit = 30
+        head = f"## 05-chats — дампы чатов ({len(chats)}"
+        head += f", показаны {limit} последних)" if len(chats) > limit else ")"
+        out += ["", head, ""]
+        out += [f"- [[{p['slug']}]] — {p['name']}" for p in sorted(chats, key=lambda p: p["stem"], reverse=True)[:limit]]
 
     recent = [p for p in pages if p["updated"]]
     if recent:

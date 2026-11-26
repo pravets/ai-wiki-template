@@ -53,6 +53,7 @@
 | Разбор инструмента | `10-wiki/` | `templates/tool-review.md` | `status`, `verdict`, `sources`, `checked` |
 | Карточка человека | `20-people/` | `templates/person.md` | `name`, `type`, `status` |
 | Взаимодействие | `25-interactions/` | `templates/interaction.md` | `date`, `person`, `type` |
+| Дамп чата с LLM | `05-chats/` | `templates/chat-transcript.md` | `type: chat`, `project`, `model`, `session`, `messages` |
 | Ежедневная заметка | `30-journal/` | `templates/daily.md` | `date` |
 | Проект | `40-projects/<slug>/` | `templates/project.md` | `status` |
 | Репозиторий GitHub | `42-repos/<owner>-<repo>.md` | `templates/repo.md` | `repo`, `role`, `status` |

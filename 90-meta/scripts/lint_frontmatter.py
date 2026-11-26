@@ -28,6 +28,9 @@ from datetime import date
 VAULT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 COMMON = ("name", "type", "created", "updated", "tags")
+# Зоны, где `tags` — исключение из общего правила: у дампа чата тема появляется
+# только в выжимке, до разбора тегировать нечего.
+TAGS_OPTIONAL = ("05-chats",)
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 # Правила по подпути: сначала самые длинные префиксы.
@@ -46,6 +49,9 @@ ZONE_RULES = [
     ("20-people", ("work", "client", "contractor", "community", "personal", "travel"),
      ("org", "role", "contact", "status", "first_met"), ()),
     ("25-interactions", ("meeting", "call", "chat", "email"), ("date", "person"), ()),
+    # Дамп чата: session — ключ склейки частей, part есть только у многочастных.
+    # tags опциональны: у сырца темы ещё нет, она появляется в выжимке.
+    ("05-chats", ("chat",), ("project", "model", "session", "messages"), ()),
     ("40-projects", ("project", "talk", "spec", "status", "plan", "masterclass"),
      ("project", "status"), ()),
     ("50-drafts", ("ideas", "draft", "outline", "slides", "plan", "post"), ("status",), ()),
@@ -218,6 +224,8 @@ def check(rel, text, abs_path, check_git=False):
             # Slidev читает title из своего frontmatter; дублировать его в name бессмысленно
             if "name" not in fm and "title" not in fm:
                 problems.append("missing:name")
+            continue
+        if key == "tags" and prefix in TAGS_OPTIONAL:
             continue
         if key not in fm:
             problems.append(f"missing:{key}")
