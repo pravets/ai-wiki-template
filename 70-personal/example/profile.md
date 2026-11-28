@@ -2,7 +2,7 @@
 name: Пример подсистемы — профиль предпочтений
 type: lifeadmin-profile
 created: 2026-01-05
-updated: 2026-11-25
+updated: 2026-11-28
 tags: [personal, example]
 ---
 # Пример подсистемы — профиль предпочтений
