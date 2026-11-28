@@ -55,7 +55,17 @@ def process(path, rel):
         created = git_date(rel, first=True) or git_date(rel) or date.today().isoformat()
         raw = insert_after(raw, "name", f"created: {created}")
         changed.append("created")
-    if not re.search(r"^updated:", raw, re.M):
+
+    # G3: не только дописать недостающее, но и поднять отставшее — линт считает
+    # `updated` старше git-даты последнего коммита предупреждением (updated-stale).
+    if re.search(r"^updated:", raw, re.M):
+        git_last = git_date(rel)
+        if git_last:
+            m_u = re.search(r"^updated:\s*(\S+)", raw, re.M)
+            if m_u and m_u.group(1) < git_last:
+                raw = raw[:m_u.start(1)] + git_last + raw[m_u.end(1):]
+                changed.append(f"updated {m_u.group(1)} -> {git_last}")
+    else:
         updated = git_date(rel) or date.today().isoformat()
         raw = insert_after(raw, "created", f"updated: {updated}")
         changed.append("updated")

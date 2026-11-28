@@ -1,7 +1,7 @@
 ---
 name: wiki-ingest
 created: 2026-08-25
-updated: 2026-10-13
+updated: 2026-11-28
 tags: []
 description: "Ингвест источника в LLM-wiki vault: оценка → 00-inbox → 01-raw → 10-wiki → index/log. Использовать при добавлении нового материала (ссылка, текст, видео, транскрипт) в базу знаний."
 ---
