@@ -192,18 +192,17 @@ def rule_for(rel):
     return best
 
 
-def git_date(path, first=False):
-    flag = "--diff-filter=A" if first else "-1"
+def git_date(rel):
     try:
         out = subprocess.run(
-            ["git", "log", flag, "--format=%ad", "--date=short", "--", path],
+            ["git", "log", "-1", "--format=%ad", "--date=short", "--", rel],
             cwd=VAULT, capture_output=True, text=True, timeout=10)
     except (OSError, subprocess.SubprocessError):
         return None
     lines = [l for l in out.stdout.strip().splitlines() if l]
     if not lines:
         return None
-    return lines[-1] if first else lines[0]
+    return lines[0]
 
 
 def check(rel, text, abs_path, check_git=False):

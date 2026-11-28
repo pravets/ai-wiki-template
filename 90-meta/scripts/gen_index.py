@@ -78,7 +78,7 @@ def frontmatter(text):
 
 
 def first_line(text):
-    """Первая содержательная строка тела: H1, иначе первый абзац."""
+    """Первая содержательная строка тела: первый абзац после frontmatter."""
     body = text.split("\n---", 1)[-1]
     for line in body.splitlines():
         s = line.strip()

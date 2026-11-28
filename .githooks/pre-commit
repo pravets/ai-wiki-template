@@ -28,7 +28,7 @@ if [ -z "$ANYMD" ]; then
 fi
 
 # Только заметки вики-слоя и только добавленные/изменённые.
-STAGED=$(git diff --cached --name-only --diff-filter=ACM \
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR \
     | grep -E '\.md$' \
     | grep -vE '^(index\.md|log\.md|AGENTS\.md)$' \
     | grep -vE '^(01-raw|30-journal|00-inbox|90-meta/log)/' \
@@ -53,4 +53,10 @@ fi
 
 # 3. index.md — генерируемый файл: правка руками не выживет, дрейф не копится.
 "$PY" 90-meta/scripts/gen_index.py --write >/dev/null
-git add index.md
+# hub.md тоже перегенерируется (зона 35-courses): без add закоммиченный
+# хаб расходится с frontmatter, и gen_index.py --check падает на чистом клоне.
+if [ -f 35-courses/hub.md ]; then
+    git add index.md 35-courses/hub.md
+else
+    git add index.md
+fi
