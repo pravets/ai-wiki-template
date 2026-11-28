@@ -5,7 +5,7 @@ created:
 updated:
 tags: []
 repo: owner/name
-role: maintainer | contributor | watcher | archived
+role: maintainer | contributor | fork | watcher | archived   # fork — своя линия в форке, ещё не объявленная проектом
 status: active | on-demand | paused | archived | unknown
 upstream: ""        # owner/name, только для форков с собственными коммитами
 local_path: ""      # ~/project, если клон есть на машине

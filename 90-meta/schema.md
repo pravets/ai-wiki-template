@@ -53,10 +53,14 @@
 | Разбор инструмента | `10-wiki/` | `templates/tool-review.md` | `status`, `verdict`, `sources`, `checked` |
 | Карточка человека | `20-people/` | `templates/person.md` | `name`, `type`, `status` |
 | Взаимодействие | `25-interactions/` | `templates/interaction.md` | `date`, `person`, `type` |
+| Дамп чата с LLM | `05-chats/` | `templates/chat-transcript.md` | `type: chat`, `project`, `model`, `session`, `messages` |
 | Ежедневная заметка | `30-journal/` | `templates/daily.md` | `date` |
 | Проект | `40-projects/<slug>/` | `templates/project.md` | `status` |
 | Репозиторий GitHub | `42-repos/<owner>-<repo>.md` | `templates/repo.md` | `repo`, `role`, `status` |
 | Доклад | `40-projects/talks/<slug>/` | `templates/talk-project.md` | `type: talk`, `status` |
+| Курс | `35-courses/<slug>/course.md` | `templates/course.md` | `platform`, `author`, `status`, `sources` |
+| Конспект модуля курса | `35-courses/<slug>/mNN-<тема>.md` | `templates/course-module.md` | `course`, `part`, `sources` |
+| Инсайт | `35-courses/<slug>/insights/` | `templates/insight.md` | `course`, `source`, `area`, `status`, `sources` |
 | Аккумулятор идей | `50-drafts/<slug>/` | `templates/draft-ideas.md` | `slug`, `status` |
 | Поездка | `60-travel/trips/` | `templates/trip.md` | `date_start`, `status` |
 | Точка интереса | `60-travel/poi/` | `templates/poi.md` | `name`, `region`, `sources` (для карты — `location`) |
@@ -70,6 +74,8 @@
 
 Даты — ISO 8601 (`YYYY-MM-DD`). Ссылки — `[[wikilink]]`. Служебные поля (`created`, `updated`, `tags`, `sources`) — как в шаблонах.
 
+**Дамп чата (`05-chats/`)** — единственная зона, где `tags` не обязательны: у сырца темы ещё нет, она появляется при разборе, вместе с разделом «Выжимка». `session` — ключ склейки: длинный чат пишется частями `<дата>-<slug>-partN.md` с общим `session:` и полем `part: N`. `updated` у дампа — дата диалога, а не правки файла: сверка с датой коммита (G3) для этой зоны не применяется, иначе массовый импорт даёт по нарушению на файл.
+
 ## Именование
 
 - **`10-wiki/`** — английские kebab-slug'ы: `spec-driven-development.md`
@@ -80,6 +86,7 @@
 - **`42-repos/`** — `<owner>-<repo>` нижним регистром, `/` и `_` → `-`: `pravets-streamwebrom.md`, `autumn-library-pipeliner.md`; слаг совпадает с именем файла
 - **`01-raw/`** — `YYYY-MM-DD-<slug>.md`
 - **`30-journal/`** — по дате
+- **`35-courses/`** — папка `<slug>` (kebab, слаг совпадает с папкой), внутри `course.md`, `mNN-<тема>.md`, `insights/NN-<слаг>.md`
 - **Лайф-админ** — `providers/<провайдер>.md`, `history/YYYY-MM.md`, `report-YYYY-MM.md`
 
 Папки — числовые префиксы зон; внутри — папка на сущность (проект, доклад, подсистема).
