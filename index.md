@@ -47,6 +47,19 @@
 
 ## Последние изменения
 
+- 2026-11-26 [[skills/wiki-lint/SKILL|SKILL]]
+- 2026-11-24 [[skills/wiki-courses/SKILL|SKILL]]
+- 2026-11-22 [[skills/wiki-repos/SKILL|SKILL]]
+- 2026-11-22 [[skills/wiki-query/SKILL|SKILL]]
+- 2026-11-08 [[skills/wiki-precedent/SKILL|SKILL]]
+- 2026-10-13 [[skills/wiki-verify/SKILL|SKILL]]
+- 2026-10-13 [[skills/wiki-transcript-private/SKILL|SKILL]]
+- 2026-10-13 [[skills/wiki-transcript-common/SKILL|SKILL]]
+- 2026-10-13 [[skills/wiki-ocr/SKILL|SKILL]]
+- 2026-10-13 [[skills/wiki-init/SKILL|SKILL]]
+- 2026-10-13 [[skills/wiki-ingest/SKILL|SKILL]]
+- 2026-09-25 [[skills/wiki-poi/SKILL|SKILL]]
+- 2026-09-25 [[skills/wiki-people/SKILL|SKILL]]
 - 2026-01-05 [[90-meta/accumulators|accumulators]]
 - 2026-01-05 [[70-personal/example/report-2026-01|report-2026-01]]
 - 2026-01-05 [[70-personal/example/providers/provider-a|provider-a]]

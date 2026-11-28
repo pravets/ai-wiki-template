@@ -1,5 +1,8 @@
 ---
 name: wiki-query
+created: 2026-08-25
+updated: 2026-11-22
+tags: []
 description: "Query-only исследование LLM-wiki vault: поиск, агрегаты по frontmatter, семантический обход без записи. Использовать при вопросах «что есть в базе про X», подсчётах и выборках."
 ---
 
